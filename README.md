@@ -1,9 +1,5 @@
 <div align="center">
 
-<img src="Docs/icon-plugin.png" width="88" alt="幻梦AI 修图插件">
-&nbsp;&nbsp;&nbsp;&nbsp;
-<img src="Docs/icon-ring.png" width="88" alt="幻梦圆环">
-
 # 幻梦AI · Dream AI
 
 **在 Photoshop 里做 AI 修图的一套工具** ——
