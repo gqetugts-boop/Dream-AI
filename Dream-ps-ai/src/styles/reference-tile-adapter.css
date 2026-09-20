@@ -1,0 +1,285 @@
+/* 仅做 wheelchair tile 变量与 幻梦AI 宿主的兼容映射；组件主体样式来自原始参考文件。 */
+.w10-panel,
+.reference-ui-root,
+.generation-center-page {
+  --text: var(--text-main);
+  --text-sub: var(--text-secondary);
+  --accent-glow: rgba(0, 212, 255, 0.24);
+  --tile-bg: var(--bg-card);
+  --tile-radius: var(--radius-md);
+}
+
+.w10-panel {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.w10-section-title {
+  color: var(--text-main);
+  font-size: calc(11px * var(--ui-scale));
+  font-weight: 750;
+  letter-spacing: .04em;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.w10-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.w10-row-left { flex: 1 1 auto; min-width: 0; }
+.w10-row-right { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.w10-row-label { color: var(--text-main); font-size: calc(10px * var(--ui-scale)); font-weight: 650; }
+.w10-row-desc { color: var(--text-secondary); font-size: calc(9px * var(--ui-scale)); line-height: 1.5; }
+.w10-input,
+.w10-select {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-h);
+  box-sizing: border-box;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--bg-input);
+  color: var(--text-main);
+  padding: 6px 9px;
+}
+.w10-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-card-soft);
+  color: var(--text-main);
+  font: inherit;
+  cursor: pointer;
+}
+.w10-btn-accent { border-color: var(--accent); color: var(--accent-deep); }
+
+.reference-ui-root input[type="range"],
+.cam3d-panel input[type="range"],
+.hemisynth-panel input[type="range"] { display: none !important; }
+.cam3d-panel .cam3d-slider { flex: 1 1 auto; min-width: 0; }
+.camera-provider-row { width: 100%; flex-wrap: wrap; justify-content: flex-start; }
+.camera-provider-row .camera-provider-btn { flex: 1 1 calc(50% - 4px); min-width: 112px; }
+
+/* Photoshop UXP 对 canvas 的 height:auto 支持不稳定，会把 400×300 画布压成一条。 */
+.cam3d-panel .cam3d-canvas-wrap { min-height: 300px; }
+.cam3d-panel .cam3d-canvas { width: 100% !important; height: 300px !important; min-height: 300px; }
+.app-editor-hero { min-height: 0 !important; align-items: center !important; }
+.app-editor-hero > :first-child { flex: 1 1 auto; min-width: 0; }
+.app-editor-hero > .btn-row { flex: 0 0 auto; width: auto; }
+.app-editor-hero > .btn-row .btn { flex: 0 0 auto; width: auto; min-width: 112px; }
+.cam3d-panel > .w10-row .w10-row-right { flex: 1 1 360px; max-width: none; }
+.cam3d-panel > .w10-row .custom-select,
+.cam3d-panel > .w10-row .w10-input { width: 100%; max-width: 100% !important; }
+
+.reference-native-state-select { display: none !important; }
+
+/* 生成中心：沿用 tile-center 的全宽气泡、紧凑工具条与独立滚动区。 */
+.generation-center-page { min-height: 0; }
+.generation-center-toolbar {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.generation-center-toolbar > .form-group { flex: 1 1 220px; }
+.generation-center-conversation { min-height: 210px; }
+#chatHistory {
+  min-height: 150px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-right: 2px;
+}
+#chatHistory .chat-message {
+  width: 100%;
+  box-sizing: border-box;
+  border-radius: 8px !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg-card-soft) !important;
+}
+.generation-center-tasks .task-center-list { margin: 0; }
+
+/* ComfyUI：保留参考磁贴的连接 / 工作流 / 参数 / 操作顺序。 */
+.comfy-panel > .module-card,
+.forge-panel > .module-card { margin: 0; }
+.comfy-connection-meta,
+.comfy-workflow-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.comfy-connection-meta > .w10-input { flex: 1 1 140px; }
+.comfy-workflow-toolbar #comfyWorkflowFile {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+.comfy-file-btn { cursor: pointer; }
+.comfy-workflow-section .local-workflow-textarea { min-height: 150px; }
+.comfy-action-bar { margin: 0; }
+
+/* Forge：参考源切换栏；原有 endpointMode select 作为状态桥接保留但不参与布局。 */
+.forge-panel .forge-source-bar { border: 1px solid var(--accent-line); border-radius: var(--radius-md); }
+.forge-panel .forge-connection-bar { flex-wrap: wrap; }
+.forge-panel .forge-connection-bar > .forge-url-input { flex: 1 1 220px; }
+.forge-panel .forge-connection-bar > #forgeApiToken { flex: 1 1 180px; }
+.forge-panel .forge-group-body { display: flex; flex-direction: column; gap: 8px; }
+.forge-panel .forge-action-bar { padding: 0; border-top: 0; }
+
+/* 半合成参考控件。 */
+.sf-pill {
+  display: flex;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-card-soft);
+}
+.sf-pill-opt {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 8px 6px;
+  text-align: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  border-right: 1px solid var(--border);
+}
+.sf-pill-opt:last-child { border-right: 0; }
+.sf-pill-opt.active { background: var(--accent-soft); color: var(--accent-deep); font-weight: 750; }
+.w10-toggle {
+  width: 34px;
+  height: 18px;
+  border-radius: 6px;
+  background: var(--border-strong);
+  position: relative;
+  cursor: pointer;
+}
+.w10-toggle::after {
+  content: "";
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  left: 2px;
+  top: 2px;
+  border-radius: 4px;
+  background: #fff;
+  transition: transform .15s ease;
+}
+.w10-toggle.on { background: var(--accent-deep); }
+.w10-toggle.on::after { transform: translateX(16px); }
+.w10-toggle.disabled { opacity: .4; pointer-events: none; }
+.hemisynth-fields { display: flex; flex-direction: column; gap: 2px; }
+.hemisynth-fields [data-hemi-panel] { display: none; }
+.hemisynth-fields [data-hemi-panel].active { display: flex; flex-direction: column; gap: 2px; }
+
+/* ============================================================
+   尻粒子小应用（kao 面板）
+   这批样式原先在参考项目的 local-engines.css，拆分时随 WebUI/ComfyUI
+   一并被删，导致 .kao-two-column / .kao-effects-grid / .kao-generation-grid
+   成了没有样式的裸 div，整个面板退化成单列。
+   这里按本项目验证过的写法重建：用 width 百分比 + margin 定列宽和列距，
+   不用 calc()、不用 gap（UXP 对 flex-basis 里的 calc 与容器 gap 支持不稳）。
+   ============================================================ */
+.kao-panel { width: 100%; box-sizing: border-box; }
+.kao-two-column,
+.kao-effects-grid,
+.kao-generation-grid {
+  display: flex;
+  flex-flow: row wrap;
+  align-items: stretch;
+  width: 100%;
+  box-sizing: border-box;
+}
+.kao-select-card,
+.kao-control-card {
+  width: 46%;
+  max-width: 46%;
+  min-width: 0;
+  margin: 0 2% 8px 2%;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-card-soft);
+  box-sizing: border-box;
+}
+/* 直接挂在面板下的控件（如「辅助混合占比」）独占整行。 */
+.kao-panel > .kao-control-card { width: 100%; max-width: 100%; margin-left: 0; margin-right: 0; }
+.kao-select-card { display: flex; flex-direction: column; }
+.kao-select-card > label {
+  color: var(--text-secondary);
+  font-size: calc(11px * var(--ui-scale));
+  margin-bottom: 5px;
+}
+.kao-select-card .custom-select,
+.kao-select-card .w10-select,
+.kao-select-card .w10-input { width: 100%; min-width: 0; }
+.kao-control-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.kao-control-head .w10-row-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--text-main);
+  font-size: calc(10px * var(--ui-scale));
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 数值读数：双列卡片很窄，必须不换行、不与标题抢宽度 */
+.w10-ps-val {
+  flex: 0 0 auto;
+  color: var(--accent-deep);
+  font-size: calc(10px * var(--ui-scale));
+  font-variant-numeric: tabular-nums;
+}
+.kao-control-track { display: flex; align-items: center; min-width: 0; }
+.kao-control-track .rendered-range { flex: 1 1 auto; min-width: 0; }
+.kao-control-track .w10-toggle { flex: 0 0 auto; margin-left: 6px; }
+.kao-actions { display: flex; flex-direction: column; width: 100%; padding-top: 4px; }
+.kao-actions .btn-row { display: flex; width: 100%; }
+.kao-actions .btn-row > * { flex: 1 1 0; min-width: 0; margin: 0 4px; }
+.kao-actions #kaoStatus { text-align: center; }
+
+@media (max-width: 520px) {
+  .comfy-connection-bar,
+  .comfy-connection-meta,
+  .forge-connection-bar,
+  .generation-center-toolbar { flex-direction: column !important; align-items: stretch !important; }
+  .comfy-connection-bar > *,
+  .comfy-connection-meta > *,
+  .forge-connection-bar > * { width: 100% !important; max-width: 100% !important; }
+  .cam3d-label { min-width: 36px; }
+  .cam3d-panel .cam3d-canvas-wrap { min-height: 220px; }
+  .cam3d-panel .cam3d-canvas { height: 220px !important; min-height: 220px; }
+  .app-editor-hero { flex-direction: column !important; }
+  .app-editor-hero > :first-child,
+  .app-editor-hero > .btn-row,
+  .app-editor-hero > .btn-row .btn { width: 100%; min-width: 0; }
+  .cam3d-panel > .w10-row { flex-direction: column; align-items: stretch; }
+  .cam3d-panel > .w10-row .w10-row-left,
+  .cam3d-panel > .w10-row .w10-row-right { width: 100%; flex: 1 1 auto; }
+}
