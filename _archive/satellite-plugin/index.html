@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>幻梦AI 卫星面板</title>
+    <style>
+        :root {
+            --bg: #1c1c1e;
+            --bg-raised: #262629;
+            --bg-sunken: #141416;
+            --line: #3a3a3f;
+            --line-soft: #2e2e33;
+            --text: #e8e8ea;
+            --text-dim: #9a9aa2;
+            --text-faint: #6e6e76;
+            --accent: #6aa9ff;
+            --accent-dim: #3d6ba8;
+            --ok: #4ec98a;
+            --warn: #e0b45c;
+            --err: #e06c6c;
+            --radius: 6px;
+            --radius-lg: 10px;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 12px;
+            font-family: "Adobe Clean", -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        .sat-hidden { display: none; }
+
+        #satRoot {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            position: relative;
+        }
+
+        #satTopBar {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 6px 8px 6px 8px;
+            background: var(--bg-raised);
+            border-bottom: 1px solid var(--line);
+            flex: 0 0 auto;
+        }
+
+        #satBrand {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text);
+            flex: 1 1 auto;
+        }
+
+        #satBrandSub {
+            font-size: 10px;
+            color: var(--text-faint);
+            margin-left: 6px;
+            font-weight: normal;
+        }
+
+        .sat-icon-btn {
+            background: var(--bg-sunken);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            color: var(--text-dim);
+            font-size: 11px;
+            padding: 4px 8px 4px 8px;
+            margin-left: 4px;
+            cursor: pointer;
+        }
+
+        .sat-icon-btn:hover {
+            color: var(--text);
+            border-color: var(--accent-dim);
+        }
+
+        #satPieBtn {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        #satStage {
+            flex: 1 1 auto;
+            position: relative;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+
+        .sat-view {
+            padding: 7px;
+        }
+
+        /* UXP 已知问题：任何元素都盖不住可编辑文本控件（textarea/input），
+           它们永远渲染在最上层。所以圆环弹出时必须把视图整个藏掉，
+           光靠 z-index 是压不住的。 */
+        .sat-ring-open .sat-view {
+            display: none;
+        }
+
+        .sat-divider {
+            height: 1px;
+            background: var(--line-soft);
+            margin: 7px 0 7px 0;
+        }
+
+        .sat-card {
+            background: var(--bg-raised);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius-lg);
+            padding: 8px;
+            margin-bottom: 8px;
+        }
+
+        .sat-card-title {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-bottom: 6px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+
+        .sat-card-title-text { flex: 1 1 auto; }
+
+        .sat-label {
+            font-size: 10px;
+            color: var(--text-faint);
+            margin-bottom: 3px;
+            display: block;
+        }
+
+        textarea, input[type="text"], input[type="password"], input[type="number"] {
+            width: 100%;
+            box-sizing: border-box;
+            background: var(--bg-sunken);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 12px;
+            font-family: inherit;
+            padding: 5px 6px 5px 6px;
+            margin: 0 0 6px 0;
+        }
+
+        textarea:focus, input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        #satPrompt {
+            min-height: 54px;
+            resize: vertical;
+        }
+
+        .sat-row {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .sat-row-wrap {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+
+        .sat-btn {
+            background: var(--bg-sunken);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            color: var(--text);
+            font-size: 11px;
+            padding: 5px 10px 5px 10px;
+            cursor: pointer;
+        }
+
+        .sat-btn:hover {
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .sat-btn-primary {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: #ffffff;
+            font-weight: bold;
+        }
+
+        .sat-btn-block {
+            display: block;
+            width: 100%;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .sat-btn[disabled] {
+            opacity: 0.45;
+            cursor: default;
+        }
+
+        .sat-chip {
+            background: var(--bg-sunken);
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            color: var(--text-dim);
+            font-size: 11px;
+            padding: 4px 9px 4px 9px;
+            margin: 0 5px 5px 0;
+            cursor: pointer;
+        }
+
+        .sat-chip:hover {
+            border-color: var(--accent-dim);
+            color: var(--text);
+        }
+
+        .sat-chip.sat-active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .sat-inline-select {
+            border: 1px solid var(--line);
+            border-radius: var(--radius);
+            background: var(--bg-sunken);
+            margin-bottom: 6px;
+            overflow: hidden;
+        }
+
+        .sat-inline-trigger {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 6px 8px 6px 8px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .sat-inline-trigger:hover { background: #303036; }
+
+        .sat-inline-value {
+            flex: 1 1 auto;
+            color: var(--text);
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .sat-inline-caret {
+            flex: 0 0 auto;
+            color: var(--text-faint);
+            font-size: 9px;
+            margin-left: 6px;
+        }
+
+        .sat-inline-list {
+            border-top: 1px solid var(--line-soft);
+            max-height: 180px;
+            overflow-y: auto;
+        }
+
+        .sat-inline-option {
+            padding: 5px 8px 5px 8px;
+            font-size: 11px;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 1px solid var(--line-soft);
+        }
+
+        .sat-inline-option:hover {
+            background: #303036;
+            color: var(--text);
+        }
+
+        .sat-inline-option.sat-active {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        #satStatus {
+            font-size: 11px;
+            color: var(--text-dim);
+            flex: 1 1 auto;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        #satFooter {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            padding: 5px 8px 5px 8px;
+            background: var(--bg-raised);
+            border-top: 1px solid var(--line);
+            min-height: 18px;
+        }
+
+        #satFooterDot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--text-faint);
+            margin-right: 6px;
+            flex: 0 0 auto;
+        }
+
+        #satFooterDot.sat-ok { background: var(--ok); }
+        #satFooterDot.sat-warn { background: var(--warn); }
+        #satFooterDot.sat-err { background: var(--err); }
+
+        #satBridgeStatus {
+            flex: 0 0 auto;
+            font-size: 10px;
+            color: var(--text-faint);
+            margin-left: 6px;
+            white-space: nowrap;
+        }
+
+        #satBridgeStatus.sat-ok { color: var(--ok); }
+        #satBridgeStatus.sat-warn { color: var(--warn); }
+
+        /* ---------- 圆环层 ---------- */
+
+        #satPieLayer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(10, 10, 12, 0.72);
+            z-index: 900;
+            overflow: hidden;
+        }
+
+        #satPieDisc {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(46, 46, 52, 0.92);
+            border: 1px solid #4a4a52;
+        }
+
+        #satPieRing {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        .sat-pie-item {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: #303036;
+            border: 1px solid #4a4a52;
+            color: var(--text-dim);
+            cursor: pointer;
+            overflow: hidden;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .sat-pie-item.sat-pie-hover {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: #ffffff;
+        }
+
+        .sat-pie-item.sat-pie-disabled {
+            opacity: 0.35;
+        }
+
+        .sat-pie-icon {
+            font-size: 16px;
+            line-height: 18px;
+        }
+
+        .sat-pie-name {
+            font-size: 9px;
+            line-height: 11px;
+            margin-top: 1px;
+            padding: 0 2px 0 2px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        #satPieHub {
+            position: absolute;
+            border-radius: 50%;
+            background: #1a1a1d;
+            border: 1px solid var(--accent-dim);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        #satPieHubTitle {
+            font-size: 12px;
+            font-weight: bold;
+            color: var(--text);
+            line-height: 15px;
+            padding: 0 3px 0 3px;
+        }
+
+        #satPieHubSub {
+            font-size: 9px;
+            color: var(--text-faint);
+            line-height: 11px;
+            margin-top: 2px;
+            padding: 0 3px 0 3px;
+        }
+
+        #satPieHint {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 8px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-faint);
+            pointer-events: none;
+        }
+
+        #satPieBreadcrumb {
+            position: absolute;
+            left: 0;
+            right: 0;
+            top: 8px;
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-dim);
+            pointer-events: none;
+        }
+
+        /* ---------- 对话 ---------- */
+
+        #satChatLog {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-bottom: 6px;
+        }
+
+        .sat-msg {
+            border-radius: var(--radius);
+            padding: 6px 7px 6px 7px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            line-height: 15px;
+            white-space: pre-wrap;
+        }
+
+        .sat-msg-user {
+            background: #2b3550;
+            border: 1px solid #3d4d70;
+        }
+
+        .sat-msg-ai {
+            background: var(--bg-sunken);
+            border: 1px solid var(--line-soft);
+        }
+
+        .sat-msg-meta {
+            font-size: 9px;
+            color: var(--text-faint);
+            margin-bottom: 3px;
+        }
+
+        /* ---------- 结果预览 ---------- */
+
+        #satPreview {
+            width: 100%;
+            max-height: 168px;
+            object-fit: contain;
+            background: var(--bg-sunken);
+            border: 1px solid var(--line-soft);
+            border-radius: var(--radius);
+            margin-bottom: 6px;
+            display: none;
+        }
+
+        .sat-empty {
+            font-size: 11px;
+            color: var(--text-faint);
+            padding: 5px 0 5px 0;
+            text-align: center;
+        }
+
+        .sat-note {
+            font-size: 10px;
+            color: var(--text-faint);
+            line-height: 13px;
+            margin-bottom: 5px;
+        }
+
+        .sat-danger { color: var(--err); }
+        .sat-ok-text { color: var(--ok); }
+    </style>
+</head>
+<body>
+    <div id="satRoot">
+        <div id="satTopBar">
+            <div id="satBrand">幻梦AI 卫星<span id="satBrandSub">圆环面板</span></div>
+            <button id="satPieBtn" class="sat-icon-btn">◎ 圆环</button>
+            <button id="satSettingsBtn" class="sat-icon-btn">设置</button>
+        </div>
+
+        <div id="satStage">
+            <div id="viewHome" class="sat-view">
+                <textarea id="satPrompt" placeholder="描述画面，或右键唤出圆环选预设"></textarea>
+                <div id="satPromptMeta" class="sat-note">未选择预设</div>
+                <div class="sat-row">
+                    <button id="satGenerateBtn" class="sat-btn sat-btn-primary" style="flex:1 1 auto; margin-right:5px;">生成</button>
+                    <button id="satReadSelectionBtn" class="sat-btn">读选区</button>
+                </div>
+
+                <div class="sat-divider"></div>
+                <div id="satParamSummary" class="sat-note">加载中…</div>
+                <div class="sat-row">
+                    <button id="satQuickParamsBtn" class="sat-btn" style="flex:1 1 auto; margin-right:5px;">改参数</button>
+                    <button id="satQuickPresetsBtn" class="sat-btn" style="flex:1 1 auto;">选预设</button>
+                </div>
+
+                <div class="sat-divider"></div>
+                <div id="satPreviewEmpty" class="sat-empty">还没有生成结果</div>
+                <img id="satPreview" />
+                <div class="sat-row" id="satResultRow">
+                    <button id="satPlaceBtn" class="sat-btn" style="flex:1 1 auto; margin-right:5px;" disabled>放回文档</button>
+                    <button id="satSaveAsBtn" class="sat-btn" style="flex:1 1 auto;" disabled>另存为…</button>
+                </div>
+            </div>
+
+            <div id="viewParams" class="sat-view sat-hidden">
+                <div class="sat-card">
+                    <div class="sat-card-title">
+                        <span class="sat-card-title-text">生成参数</span>
+                        <button id="satParamsBack" class="sat-icon-btn">返回</button>
+                    </div>
+                    <label class="sat-label">渠道</label>
+                    <div id="satChannelChips" class="sat-row-wrap"></div>
+                    <label class="sat-label">生图模型</label>
+                    <div id="satImageModelSelect" class="sat-inline-select"></div>
+                    <label class="sat-label">比例</label>
+                    <div id="satAspectChips" class="sat-row-wrap"></div>
+                    <label class="sat-label">分辨率</label>
+                    <div id="satResolutionChips" class="sat-row-wrap"></div>
+                    <label class="sat-label">生成数量</label>
+                    <div id="satCountChips" class="sat-row-wrap"></div>
+                    <label class="sat-label">参考图</label>
+                    <div id="satReferenceList"></div>
+                    <div class="sat-row">
+                        <button id="satAddRefBtn" class="sat-btn" style="flex:1 1 auto; margin-right:6px;">从选区加参考图</button>
+                        <button id="satClearRefBtn" class="sat-btn" style="flex:1 1 auto;">清空</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewPresets" class="sat-view sat-hidden">
+                <div class="sat-card">
+                    <div class="sat-card-title">
+                        <span class="sat-card-title-text">提示词预设</span>
+                        <button id="satPresetsBack" class="sat-icon-btn">返回</button>
+                    </div>
+                    <input type="text" id="satPresetSearch" placeholder="搜索预设名称或内容…" />
+                    <label class="sat-label">分类</label>
+                    <div id="satPresetCategories" class="sat-row-wrap"></div>
+                    <div id="satPresetList"></div>
+                    <div class="sat-note" id="satPresetCount"></div>
+                </div>
+            </div>
+
+            <div id="viewChat" class="sat-view sat-hidden">
+                <div class="sat-card">
+                    <div class="sat-card-title">
+                        <span class="sat-card-title-text">对话</span>
+                        <button id="satChatClear" class="sat-icon-btn">清空</button>
+                        <button id="satChatBack" class="sat-icon-btn">返回</button>
+                    </div>
+                    <label class="sat-label">对话模型</label>
+                    <div id="satChatModelSelect" class="sat-inline-select"></div>
+                    <div id="satChatLog"></div>
+                    <textarea id="satChatInput" placeholder="问点什么…（可勾选带图）"></textarea>
+                    <div class="sat-row">
+                        <label class="sat-chip" id="satChatWithImage">带当前选区图</label>
+                        <button id="satChatSend" class="sat-btn sat-btn-primary" style="flex:1 1 auto;">发送</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="viewSettings" class="sat-view sat-hidden">
+                <div class="sat-card">
+                    <div class="sat-card-title">
+                        <span class="sat-card-title-text">共享配置</span>
+                        <button id="satSettingsBack" class="sat-icon-btn">返回</button>
+                    </div>
+                    <div class="sat-note">从主插件导出的共享配置文件读取渠道与密钥。主插件里点「导出共享配置」即可生成。</div>
+                    <label class="sat-label">配置文件路径</label>
+                    <input type="text" id="satSharedPath" />
+                    <div class="sat-row">
+                        <button id="satSharedReload" class="sat-btn sat-btn-primary" style="flex:1 1 auto; margin-right:6px;">重新读取</button>
+                        <button id="satSharedPick" class="sat-btn" style="flex:1 1 auto;">选择文件…</button>
+                    </div>
+                    <div id="satSharedStatus" class="sat-note">未读取</div>
+                </div>
+
+                <div class="sat-card">
+                    <div class="sat-card-title"><span class="sat-card-title-text">本地覆盖</span></div>
+                    <div class="sat-note">共享配置读不到时，可以直接在这里填。这里的值优先级最高。</div>
+                    <label class="sat-label">GRS API 地址</label>
+                    <input type="text" id="satSetGrsUrl" />
+                    <label class="sat-label">GRS API Key</label>
+                    <input type="password" id="satSetGrsKey" />
+                    <label class="sat-label">NewAPI 地址</label>
+                    <input type="text" id="satSetNewApiUrl" />
+                    <label class="sat-label">NewAPI Key</label>
+                    <input type="password" id="satSetNewApiKey" />
+                    <label class="sat-label">xAI 地址</label>
+                    <input type="text" id="satSetXaiUrl" />
+                    <label class="sat-label">xAI Key</label>
+                    <input type="password" id="satSetXaiKey" />
+                    <button id="satSettingsSave" class="sat-btn sat-btn-primary sat-btn-block">保存本地覆盖</button>
+                </div>
+
+                <div class="sat-card">
+                    <div class="sat-card-title"><span class="sat-card-title-text">圆环设置</span></div>
+                    <label class="sat-label">形状（若圆形渲染异常改成方圆形）</label>
+                    <div id="satShapeChips" class="sat-row-wrap"></div>
+                    <label class="sat-label">扇区半径</label>
+                    <div id="satRadiusChips" class="sat-row-wrap"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="satFooter">
+            <div id="satFooterDot"></div>
+            <div id="satStatus">就绪</div>
+            <div id="satBridgeStatus">圆环未连接</div>
+        </div>
+
+        <div id="satPieLayer" class="sat-hidden">
+            <div id="satPieDisc"></div>
+            <div id="satPieRing"></div>
+            <div id="satPieHub">
+                <div id="satPieHubTitle"></div>
+                <div id="satPieHubSub"></div>
+            </div>
+            <div id="satPieBreadcrumb"></div>
+            <div id="satPieHint">移动选择 · 松开确认 · Esc 取消</div>
+        </div>
+    </div>
+
+    <script src="src/ui/base.js"></script>
+    <script src="src/core/store.js"></script>
+    <script src="src/core/shared-config.js"></script>
+    <script src="src/core/image-extract.js"></script>
+    <script src="src/core/providers.js"></script>
+    <script src="src/core/ps-bridge.js"></script>
+    <script src="src/core/main-link.js"></script>
+    <script src="src/core/bridge.js"></script>
+    <script src="src/ui/pie.js"></script>
+    <script src="src/ui/views.js"></script>
+    <script src="src/app.js"></script>
+</body>
+</html>

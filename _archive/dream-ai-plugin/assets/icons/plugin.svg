@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" role="img" aria-label="Dream AI">
+  <!--
+    Dream AI 插件图标（矢量版，与 scripts/make-icons.mjs 生成的 PNG 同构）
+    配色取自 src/ui/tokens.css：紫罗兰渐变本体 + 右下角暖色落点。
+  -->
+  <defs>
+    <linearGradient id="dreamBody" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#9C89B4"/>
+      <stop offset="55%" stop-color="#8E7BA8"/>
+      <stop offset="100%" stop-color="#756490"/>
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="96" height="96" rx="26" ry="26" fill="url(#dreamBody)"/>
+  <circle cx="71.5" cy="71.5" r="11.5" fill="#FCFBF9" fill-opacity="0.92"/>
+</svg>

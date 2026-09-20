@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <style>
+        html, body { margin: 0; padding: 0; background: #1e1e1e; color: #e6e6e6; font-size: 12px; }
+        #probeArea { position: relative; width: 260px; height: 260px; background: #262626; margin: 8px; }
+        #wedgeRotate { position: absolute; left: 20px; top: 20px; width: 60px; height: 40px; background: #4a90d9; transform: rotate(45deg); }
+        #wedgeRound { position: absolute; left: 120px; top: 20px; width: 60px; height: 60px; background: #d97a4a; border-radius: 50%; }
+        #wedgeAbs { position: absolute; left: 20px; top: 120px; width: 60px; height: 60px; background: #5ad97a; border-radius: 12px; z-index: 50; }
+        #probeOut { margin: 8px; white-space: pre-wrap; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <div id="probeArea">
+        <div id="wedgeRotate"></div>
+        <div id="wedgeRound"></div>
+        <div id="wedgeAbs"></div>
+    </div>
+    <div id="probeOut">probing...</div>
+    <script src="probe.js"></script>
+</body>
+</html>

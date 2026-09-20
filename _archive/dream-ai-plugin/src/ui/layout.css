@@ -1,0 +1,926 @@
+/* ============================================================
+ * layout.css — 外壳骨架、侧栏导航、排版、滚动与 UXP 兼容层
+ *
+ * ============================================================
+ * 元素标准相对位置标定
+ * ============================================================
+ * 坐标以面板左上角为原点，x 向右、y 向下，单位 px。改样式前先读这段。
+ *
+ * ① .app-shell   x=0 y=0 w=面板宽 W h=面板高 H，主轴 row，两栏都不换行
+ *
+ * ② .app-sidebar x=0 y=0 w=68 h=H（min=max=width，不参与压缩）
+ *      内距 10/6，内容宽 56，纵向三段：
+ *        品牌 .sidebar-logo      y=10  h=34  w=34  水平居中（左缘 x=17）
+ *        导航 .sidebar-scroll    y=52  h=H-52-96   唯一可滚动区
+ *        工具 .sidebar-footer    y=H-44 h=44（含上边框与 8px 内距）
+ *      tab .sidebar-tab          w=56  min-h=46，图标在上（12px 行高）、
+ *                                标签在下（9px 字号，可折两行），水平居中
+ *
+ * ③ .app-main    x=68 y=0 w=W-68 h=H，主轴 column，三段：
+ *        顶栏 .app-topbar        y=0     h=46       （--topbar-h）
+ *        舞台 .app-stage         y=46    h=H-72     唯一可滚动区
+ *        状态条 .app-statusbar   y=H-26  h=26       （--statusbar-h）
+ *
+ * ④ 舞台内部逐级收敛宽度
+ *      舞台内容宽 SW = W - 68 - 2*page-pad
+ *      .page            w = min(SW, 760)，水平居中
+ *      .card            w = 页面宽，内容区 = 卡片宽 - 2*12 - 2*1
+ *      两列栅格单列宽   = (内容区 - 10) / 2，< 132px 自动降为单列
+ *      .row 标签+控件   宽 > 400 左右分栏（左 40% / 右 60%）；
+ *                       ≤ 400 改上下两行（标签整行、控件整行）
+ *      参考图槽位        每行 2 个，单槽 = (内容区 - 8) / 2，高固定 132
+ *
+ * ⑤ 硬约束（防错位的根本规则）
+ *      a. 所有 flex 子项都要有 min-width:0，否则 nowrap 内容会把父容器撑宽；
+ *      b. 固定宽度只出现在侧栏和图标上，其余一律百分比/弹性；
+ *      c. 任何一级都不允许横向溢出：舞台 overflow-x:hidden，且上一级必须
+ *         给下一级算准可用宽度（min-width:0 + box-sizing:border-box）；
+ *      d. 圆角一律方圆形 ≤18px，不用 999px / 50%。
+ *
+ * 竖排断点（只收紧间距，不收缩侧栏）：
+ *      ≤440px 内距收紧、侧栏 64px；≤400px 标签行改竖排；
+ *      ≤360px 隐藏顶栏品牌名与状态条次要信息；≤320px 收起日志文字。
+ *
+ * 自动化校验：node tests/ui-smoke.mjs 会检查 CSS 变量、括号配平与
+ * 未样式化的 class；改完布局务必跑一遍。
+ * ============================================================ */
+
+/* ---------- 宿主基线重置：UXP 的默认样式必须压掉 ---------- */
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-sans);
+    font-size: calc(var(--fs-base) * var(--ui-scale));
+    line-height: var(--lh-base);
+    color: var(--text-main);
+    background: var(--bg-app);
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+}
+
+/* 宿主默认会给控件套一层系统皮肤，这里统一清掉 */
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    margin: 0;
+    border-radius: 0;
+    background-image: none !important;
+    box-shadow: none;
+}
+
+button {
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    text-align: inherit;
+}
+
+input,
+textarea {
+    user-select: text;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+/* 原生 range 在 UXP 里无法可靠改样式，全局隐藏，滑块统一自绘 */
+input[type="range"] {
+    display: none !important;
+}
+
+/* 原生 color 在 UXP 里也无法定位，隐藏后由自绘色板代替 */
+input[type="color"] {
+    display: none !important;
+}
+
+select {
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+a {
+    color: var(--accent-strong);
+    text-decoration: none;
+}
+
+::selection {
+    background: var(--accent-soft);
+    color: var(--text-strong);
+}
+
+/* ---------- 滚动条：细、低对比、方形滑块 ---------- */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: var(--radius-xs);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* ---------- 启动遮罩 ---------- */
+.boot-veil {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-14);
+    background: var(--bg-app);
+    z-index: 900;
+}
+
+.boot-veil[hidden] {
+    display: none;
+}
+
+.boot-mark {
+    display: flex;
+    align-items: flex-end;
+    gap: 5px;
+    height: 26px;
+}
+
+.boot-mark span {
+    display: block;
+    width: 7px;
+    border-radius: var(--radius-xs);
+    background: var(--accent);
+    animation: boot-pulse 1180ms var(--ease-out) infinite;
+}
+
+.boot-mark span:nth-child(1) { height: 12px; animation-delay: 0ms; }
+.boot-mark span:nth-child(2) { height: 22px; animation-delay: 130ms; background: var(--accent-strong); }
+.boot-mark span:nth-child(3) { height: 16px; animation-delay: 260ms; background: var(--alt); }
+
+@keyframes boot-pulse {
+    0%, 100% { transform: scaleY(0.55); opacity: 0.55; }
+    50% { transform: scaleY(1); opacity: 1; }
+}
+
+.boot-caption {
+    font-size: var(--fs-sm);
+    color: var(--text-muted);
+    letter-spacing: var(--tracking-wide);
+}
+
+/* ---------- 外壳：左右两栏，各自独立滚动 ---------- */
+.app-shell {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    background: var(--bg-app);
+}
+
+.app-shell[hidden] {
+    display: none;
+}
+
+/* ============================================================
+ * 侧栏
+ * ============================================================ */
+.app-sidebar {
+    flex: 0 0 var(--sidebar-w);
+    width: var(--sidebar-w);
+    min-width: var(--sidebar-w);
+    max-width: var(--sidebar-w);
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-6);
+    padding: var(--space-10) var(--space-6);
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    overflow: hidden;
+}
+
+.sidebar-logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    margin: 0 auto var(--space-6);
+    border-radius: var(--radius-md);
+    background: var(--accent-gradient);
+    box-shadow: var(--shadow-accent);
+}
+
+.sidebar-logo-mark {
+    display: block;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--glyph-surface);
+}
+
+/* 导航区：只有它滚动，滚动条隐藏，避免占掉宽度 */
+.sidebar-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+/* 分组：create / engine / asset 连续排布，用细分隔线区分 */
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.sidebar-group + .sidebar-group {
+    margin-top: var(--space-6);
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-subtle);
+}
+
+/* 侧栏 tab：图标在上、文字在下，文字允许换行不溢出 */
+.sidebar-tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    min-width: 0;
+    min-height: 46px;
+    padding: 5px 2px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+
+.sidebar-tab[aria-selected="true"] {
+    background: var(--accent-soft);
+    color: var(--accent-strong);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.sidebar-tab-glyph {
+    font-size: var(--fs-md);
+    line-height: 1;
+}
+
+.sidebar-tab-label {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-medium);
+    line-height: 1.15;
+    text-align: center;
+    letter-spacing: 0;
+    /*
+     * 侧栏标签只折行、绝不截断。
+     * 之前出现 "工..." / "Co..." 是因为这里既没有 overflow 约束、宽度又是
+     * 零余量：3 个中文字 = 27px 正好等于可用宽度，宿主字体略宽就溢出并显示
+     * 省略号。现在靠两件事解决：
+     *   1. 侧栏加宽到 72px（可用宽 62px，3 字 27px 有大量余量）；
+     *   2. 明确 overflow: visible + text-overflow: clip，禁止省略号出现；
+     *      ComfyUI 这类长英文词用 anywhere 断行。
+     */
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    overflow: visible;
+    text-overflow: clip;
+}
+
+/* 侧栏底部：三个小工具 + 日志入口 */
+.sidebar-footer {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding-top: var(--space-8);
+    border-top: 1px solid var(--border-subtle);
+}
+
+.sidebar-footer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2px;
+}
+
+.sidebar-tool {
+    position: relative;
+    flex: 1 1 0;
+    min-width: 0;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+    color: var(--text-secondary);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-tool:hover {
+    background: var(--bg-hover);
+    color: var(--text-strong);
+}
+
+.sidebar-tool-glyph {
+    font-size: var(--fs-md);
+    line-height: 1;
+}
+
+.sidebar-tool-text {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    letter-spacing: 0.02em;
+}
+
+.sidebar-tool-badge {
+    position: absolute;
+    top: -3px;
+    right: -1px;
+    min-width: 13px;
+    height: 13px;
+    padding: 0 3px;
+    border-radius: var(--radius-xs);
+    background: var(--alt);
+    color: #fff;
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-semibold);
+    line-height: 13px;
+    text-align: center;
+}
+
+.sidebar-log {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    height: 24px;
+    border-radius: var(--radius-xs);
+    color: var(--text-secondary);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.sidebar-log:hover {
+    background: var(--bg-hover);
+    color: var(--text-strong);
+}
+
+.sidebar-log-label {
+    font-size: var(--fs-2xs);
+    font-weight: var(--fw-medium);
+}
+
+.sidebar-tool-status {
+    flex: 0 0 auto;
+    width: 7px;
+    height: 7px;
+    border-radius: 2px;
+    background: var(--text-muted);
+}
+
+.sidebar-tool-status[data-state="busy"] { background: var(--accent); animation: dot-pulse 1200ms infinite; }
+.sidebar-tool-status[data-state="ok"] { background: var(--success); }
+.sidebar-tool-status[data-state="warn"] { background: var(--warning); }
+.sidebar-tool-status[data-state="error"] { background: var(--danger); }
+
+@keyframes dot-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+}
+
+/* ============================================================
+ * 主区
+ * ============================================================ */
+.app-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.app-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    height: var(--topbar-h);
+    padding: 0 var(--page-pad);
+    background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.topbar-title {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-6);
+    min-width: 0;
+    overflow: hidden;
+}
+
+.topbar-brand {
+    flex: 0 0 auto;
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    letter-spacing: var(--tracking-wide);
+    text-transform: uppercase;
+}
+
+.topbar-sep {
+    flex: 0 0 auto;
+    color: var(--border-strong);
+    font-size: var(--fs-xs);
+}
+
+.topbar-page {
+    min-width: 0;
+    font-size: var(--fs-md);
+    font-weight: var(--fw-semibold);
+    color: var(--text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.topbar-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.topbar-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-4);
+    height: 24px;
+    padding: 0 var(--space-8);
+    border-radius: var(--radius-xs);
+    color: var(--text-secondary);
+    font-size: var(--fs-xs);
+    transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+
+.topbar-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-strong);
+}
+
+.topbar-btn-glyph {
+    font-size: var(--fs-md);
+    line-height: 1;
+}
+
+.topbar-btn-label {
+    font-weight: var(--fw-medium);
+}
+
+/* 页面舞台：唯一的滚动容器，横向永不滚动 */
+.app-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    padding: var(--page-pad);
+}
+
+/* 状态条 */
+.app-statusbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-8);
+    height: var(--statusbar-h);
+    padding: 0 var(--page-pad);
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border-subtle);
+    font-size: var(--fs-xs);
+    color: var(--text-muted);
+    overflow: hidden;
+}
+
+.status-dot {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    background: var(--text-muted);
+}
+
+.status-dot[data-state="busy"] { background: var(--accent); animation: dot-pulse 1200ms infinite; }
+.status-dot[data-state="ok"] { background: var(--success); }
+.status-dot[data-state="warn"] { background: var(--warning); }
+.status-dot[data-state="error"] { background: var(--danger); }
+
+.status-message {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+}
+
+.status-progress {
+    flex: 0 0 80px;
+    height: 4px;
+    border-radius: var(--radius-xs);
+    background: var(--bg-sunken);
+    overflow: hidden;
+}
+
+.status-progress[hidden] {
+    display: none;
+}
+
+.status-progress-bar {
+    display: block;
+    height: 100%;
+    width: 0;
+    background: var(--accent-gradient);
+    transition: width var(--dur-base) var(--ease-out);
+}
+
+.status-meta {
+    flex: 0 0 auto;
+    max-width: 40%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-muted);
+}
+
+/* ============================================================
+ * 抽屉：宽度自适应，窄面板下占满
+ * ============================================================ */
+.drawer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 340px;
+    max-width: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    border-left: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    z-index: 700;
+}
+
+.drawer[hidden] {
+    display: none;
+}
+
+.drawer-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: var(--space-10) var(--space-12);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.drawer-title {
+    min-width: 0;
+    font-size: var(--fs-md);
+    font-weight: var(--fw-semibold);
+    color: var(--text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.drawer-head-actions {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-6);
+}
+
+.drawer-close {
+    width: var(--control-h-sm);
+    height: var(--control-h-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-xs);
+    font-size: var(--fs-lg);
+    line-height: 1;
+    color: var(--text-muted);
+}
+
+.drawer-close:hover {
+    background: var(--bg-hover);
+    color: var(--text-strong);
+}
+
+.drawer-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--space-10) var(--space-12);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+}
+
+/* ---------- 模态 ---------- */
+.modal-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-16);
+    background: var(--bg-overlay);
+    z-index: 800;
+}
+
+.modal-layer[hidden] {
+    display: none;
+}
+
+.modal-panel {
+    width: 100%;
+    max-width: 400px;
+    max-height: 86%;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.modal-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-8);
+    padding: var(--space-12) var(--space-14);
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.modal-title {
+    min-width: 0;
+    font-size: var(--fs-md);
+    font-weight: var(--fw-semibold);
+    color: var(--text-strong);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: var(--space-14);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-10);
+}
+
+.modal-foot {
+    flex: 0 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-8);
+    padding: var(--space-10) var(--space-14);
+    border-top: 1px solid var(--border-subtle);
+    background: var(--bg-surface-soft);
+}
+
+.modal-foot:empty {
+    display: none;
+}
+
+/* ---------- 轻提示 ---------- */
+.toast-stack {
+    position: absolute;
+    left: var(--space-12);
+    right: var(--space-12);
+    bottom: calc(var(--statusbar-h) + var(--space-10));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-6);
+    z-index: 900;
+    pointer-events: none;
+}
+
+.toast {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-8);
+    max-width: 100%;
+    padding: var(--space-8) var(--space-12);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--fs-sm);
+    color: var(--text-main);
+    animation: toast-in var(--dur-base) var(--ease-out);
+}
+
+.toast[data-tone="ok"] { border-color: var(--success); }
+.toast[data-tone="warn"] { border-color: var(--warning); }
+.toast[data-tone="error"] { border-color: var(--danger); }
+
+.toast-glyph {
+    flex: 0 0 auto;
+    font-size: var(--fs-md);
+    line-height: var(--lh-base);
+}
+
+.toast > span:last-child {
+    min-width: 0;
+    word-break: break-word;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+ * 竖排（窄面板）适配
+ *
+ * 原则：只收紧间距、"只减不撑"；侧栏宽度保持 64–68px 不再收窄。
+ * 收窄侧栏会把中文标签挤成 "工..."，同时并没有给主区换来多少可用宽度。
+ * ============================================================ */
+@media (max-width: 440px) {
+    :root {
+        --page-pad: 8px;
+        /* 不再收窄侧栏：64px 对中文标签是零余量，会截断 */
+        --sidebar-w: 72px;
+    }
+
+    .app-sidebar {
+        padding: var(--space-8) var(--space-4);
+    }
+
+    .sidebar-tab {
+        min-height: 42px;
+        padding: 4px 2px;
+    }
+
+    .sidebar-logo {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+@media (max-width: 360px) {
+    :root {
+        --page-pad: 7px;
+        --topbar-h: 42px;
+    }
+
+    /* 只隐藏次要信息；侧栏与主区宽度都不再变化 */
+    .topbar-brand,
+    .topbar-sep,
+    .topbar-btn-label {
+        display: none;
+    }
+
+    .status-progress {
+        flex-basis: 56px;
+    }
+
+    .status-meta {
+        display: none;
+    }
+}
+
+@media (max-width: 320px) {
+    :root {
+        --page-pad: 6px;
+    }
+
+    /* 极窄时只压缩日志入口的文字，导航标签仍然完整显示 */
+    .sidebar-log-label {
+        display: none;
+    }
+}
+
+/* ---------- 减少动效 ---------- */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 1ms !important;
+        transition-duration: 1ms !important;
+    }
+}
+
+/* ============================================================
+ * 静态图片池
+ *
+ * 预置在 index.html 里（不是运行时创建），因为 UXP 只渲染静态声明的图片元素。
+ * 池子放在流外且尺寸为 0，不影响布局；需要时由 JS 把节点搬进预览框。
+ * ============================================================ */
+.image-pool {
+    position: absolute;
+    left: -10000px;
+    top: 0;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    pointer-events: none;
+    opacity: 0;
+}
+
+.image-pool img {
+    display: block;
+    width: 1px;
+    height: 1px;
+}
+
+/* ---------- 排版辅助类 ---------- */
+.muted { color: var(--text-muted); }
+.secondary { color: var(--text-secondary); }
+.strong { color: var(--text-strong); font-weight: var(--fw-semibold); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+.centered { display: flex; align-items: center; justify-content: center; }
+.stack { display: flex; flex-direction: column; gap: var(--space-8); }
+.inline { display: flex; align-items: center; gap: var(--space-6); min-width: 0; }
+.spacer-line { flex: 1 1 auto; }
+[hidden] { display: none !important; }

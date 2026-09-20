@@ -1,0 +1,253 @@
+/* ============================================================
+ * tokens.css — 莫兰迪低饱和设计变量
+ *
+ * 设计取向：柔和雾感（Morandi / dusty fog）
+ *   - 底色是米粉灰，不是纯白；卡片靠极浅的边界和弱阴影分层
+ *   - 主色是低饱和紫罗兰，强调色是褪色的陶土橙
+ *   - 全部字号、间距、圆角、阴影都由本文件的变量派生
+ *
+ * 使用规则：
+ *   1. 任何组件都不允许写死颜色，只能用这里的变量；
+ *   2. 暗色主题只覆盖颜色变量，不改结构、不改尺寸；
+ *   3. UXP 不支持 CSS Grid，布局一律 flex 百分比。
+ * ============================================================ */
+
+:root {
+    /* ---------- 色板：原始色阶 ---------- */
+    --clay-50: #FBF8F5;
+    --clay-100: #F5F1EC;
+    --clay-200: #EDE8E2;
+    --clay-300: #E0DAD3;
+    --clay-400: #CCC5BD;
+    --clay-500: #ADA69D;
+    --clay-600: #8A837A;
+    --clay-700: #5E5860;
+    --clay-800: #3C3742;
+    --clay-900: #26222B;
+
+    --violet-100: #EFEAF4;
+    --violet-200: #DED6E8;
+    --violet-300: #C4B7D6;
+    --violet-400: #A895C2;
+    --violet-500: #8E7BA8;
+    --violet-600: #756490;
+    --violet-700: #5D4F76;
+
+    --terra-100: #F7ECE6;
+    --terra-300: #E4BCA9;
+    --terra-500: #C98B72;
+    --terra-600: #B0725A;
+
+    --sage-100: #E9EFEA;
+    --sage-400: #93AC9B;
+    --sage-600: #6C8574;
+
+    --mauve-100: #F3EAEC;
+    --mauve-400: #B4818D;
+    --mauve-600: #97626F;
+
+    /* ---------- 语义色：浅色主题 ---------- */
+    --bg-app: #EFEDE8;
+    --bg-sidebar: #F7F4F0;
+    --bg-surface: #FCFBF9;
+    --bg-surface-soft: #F6F3EF;
+    --bg-sunken: #E8E5DF;
+    --bg-input: #FFFFFF;
+    --bg-hover: #F1EDE8;
+    --bg-pressed: #E9E4DE;
+    --bg-selected: var(--violet-100);
+    --bg-overlay: rgba(38, 34, 43, 0.42);
+    /* 覆盖层上的图标底色：浅色主题用白，暗色主题用深灰 */
+    --glyph-surface: rgba(252, 251, 249, 0.92);
+
+    --text-strong: #2B2733;
+    --text-main: #45404E;
+    --text-secondary: #6E6875;
+    --text-muted: #9C96A1;
+    --text-inverse: #FBFAF8;
+
+    --border-subtle: #E5E0D9;
+    --border: #D8D2CA;
+    --border-strong: #C2BBB2;
+
+    --accent: #8E7BA8;
+    --accent-strong: #756490;
+    --accent-soft: #EFEAF4;
+    --accent-line: rgba(142, 123, 168, 0.34);
+    --accent-gradient: linear-gradient(135deg, #9C89B4 0%, #8E7BA8 55%, #7C6A96 100%);
+    --accent-contrast: #FFFFFF;
+
+    --alt: #C98B72;
+    --alt-soft: #F7ECE6;
+
+    --success: #6C8574;
+    --success-soft: #E9EFEA;
+    --warning: #B58A50;
+    --warning-soft: #F6EEDF;
+    --danger: #A96A6A;
+    --danger-soft: #F5E9E7;
+    --info: #6E8296;
+    --info-soft: #E8EDF1;
+
+    --focus-ring: rgba(142, 123, 168, 0.42);
+
+    /* ---------- 阴影：低浓度、短距离，避免塑料感 ---------- */
+    --shadow-xs: 0 1px 1px rgba(43, 39, 51, 0.03);
+    --shadow-sm: 0 1px 2px rgba(43, 39, 51, 0.05), 0 1px 1px rgba(43, 39, 51, 0.03);
+    --shadow-md: 0 2px 6px rgba(43, 39, 51, 0.06), 0 1px 2px rgba(43, 39, 51, 0.04);
+    --shadow-lg: 0 8px 22px rgba(43, 39, 51, 0.10), 0 2px 6px rgba(43, 39, 51, 0.05);
+    --shadow-accent: 0 2px 10px rgba(142, 123, 168, 0.26);
+
+    /* ---------- 尺寸与节奏 ---------- */
+    --space-2: 2px;
+    --space-4: 4px;
+    --space-6: 6px;
+    --space-8: 8px;
+    --space-10: 10px;
+    --space-12: 12px;
+    --space-14: 14px;
+    --space-16: 16px;
+    --space-20: 20px;
+    --space-24: 24px;
+    --space-32: 32px;
+
+    --radius-xs: 4px;
+    --radius-sm: 7px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    /* 「方圆形」：轻微圆角，不再有胶囊/椭圆容器。
+       变量名沿用 pill 以免大量调用方报错，但取值已收窄到方圆形。 */
+    --radius-pill: 8px;
+
+    --control-h-sm: 24px;
+    --control-h: 30px;
+    --control-h-lg: 36px;
+    --topbar-h: 46px;
+    --nav-h: 38px;
+    --statusbar-h: 26px;
+
+    /* ---------- 字体 ---------- */
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+        "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", Arial, sans-serif;
+    --font-mono: "SF Mono", "JetBrains Mono", Menlo, Consolas, "Courier New", monospace;
+
+    --fs-2xs: 9px;
+    --fs-xs: 10px;
+    --fs-sm: 11px;
+    --fs-base: 12px;
+    --fs-md: 13px;
+    --fs-lg: 15px;
+    --fs-xl: 17px;
+    --fs-2xl: 21px;
+
+    --fw-regular: 400;
+    --fw-medium: 500;
+    --fw-semibold: 600;
+    --fw-bold: 700;
+
+    --lh-tight: 1.25;
+    --lh-base: 1.5;
+    --lh-loose: 1.7;
+
+    --tracking-wide: 0.04em;
+
+    /* ---------- 动效 ---------- */
+    --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+    --dur-fast: 120ms;
+    --dur-base: 180ms;
+
+    /* ---------- 布局 ---------- */
+    --sidebar-w: 72px;
+    --stage-w: 760px;      /* 表格/预览等内容的最大阅读宽度 */
+    --page-pad: 12px;
+
+    /* 界面缩放：由设置写入，整体等比放大 */
+    --ui-scale: 1;
+}
+
+/* ============================================================
+ * 强调色方案
+ *
+ * 默认（莫兰迪）：低饱和紫罗兰 + 褪色陶土。
+ * 参考配色：切到 data-accent="zhuang" 即得到参考插件那套青蓝强调，
+ * 其余结构、尺寸、方圆形圆角完全不变——这样风格可以整体对齐，
+ * 也可以随时切回低饱和。
+ * ============================================================ */
+body[data-accent="zhuang"] {
+    --accent: #00D4FF;
+    --accent-strong: #0094FF;
+    --accent-soft: #E6F9FF;
+    --accent-line: rgba(0, 212, 255, 0.35);
+    --accent-gradient: linear-gradient(135deg, #00D4FF 0%, #0094FF 100%);
+    --accent-contrast: #FFFFFF;
+    --focus-ring: rgba(0, 212, 255, 0.42);
+    --shadow-accent: 0 2px 10px rgba(0, 148, 255, 0.28);
+    --bg-selected: #E6F9FF;
+}
+
+body[data-accent="zhuang"][data-theme="dark"] {
+    --accent: #38D8FF;
+    --accent-strong: #7EE4FF;
+    --accent-soft: #0A2E40;
+    --accent-line: rgba(56, 216, 255, 0.38);
+    --accent-gradient: linear-gradient(135deg, #38D8FF 0%, #1FA6F0 100%);
+    --accent-contrast: #05202C;
+    --focus-ring: rgba(56, 216, 255, 0.45);
+    --shadow-accent: 0 2px 12px rgba(56, 216, 255, 0.22);
+    --bg-selected: #0C3550;
+}
+
+/* ============================================================
+ * 暗色主题：只覆盖颜色，保留全部尺寸与结构
+ * ============================================================ */
+body[data-theme="dark"] {
+    --bg-app: #22202A;
+    --bg-sidebar: #26242F;
+    --bg-surface: #2A2833;
+    --bg-surface-soft: #302E3A;
+    --bg-sunken: #1D1B23;
+    --bg-input: #33303C;
+    --bg-hover: #37343F;
+    --bg-pressed: #3E3A47;
+    --bg-selected: #3B3549;
+    --bg-overlay: rgba(12, 11, 15, 0.6);
+    --glyph-surface: rgba(42, 40, 51, 0.92);
+
+    --text-strong: #F3F0F5;
+    --text-main: #DED9E2;
+    --text-secondary: #B0AAB7;
+    --text-muted: #837C8C;
+    --text-inverse: #211F28;
+
+    --border-subtle: #35323E;
+    --border: #413D4B;
+    --border-strong: #524D5E;
+
+    --accent: #B6A4CC;
+    --accent-strong: #C6B6D8;
+    --accent-soft: #3A3348;
+    --accent-line: rgba(182, 164, 204, 0.32);
+    --accent-gradient: linear-gradient(135deg, #BFAED3 0%, #A995C2 55%, #9782B0 100%);
+    --accent-contrast: #221F29;
+
+    --alt: #D8A18A;
+    --alt-soft: #3E322D;
+
+    --success: #8FAE97;
+    --success-soft: #2B3830;
+    --warning: #D2AE76;
+    --warning-soft: #3B3222;
+    --danger: #D29595;
+    --danger-soft: #3D2C2C;
+    --info: #93A8BC;
+    --info-soft: #2A323A;
+
+    --focus-ring: rgba(182, 164, 204, 0.45);
+
+    --shadow-xs: 0 1px 1px rgba(0, 0, 0, 0.22);
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.28), 0 1px 1px rgba(0, 0, 0, 0.18);
+    --shadow-md: 0 2px 7px rgba(0, 0, 0, 0.34), 0 1px 2px rgba(0, 0, 0, 0.22);
+    --shadow-lg: 0 10px 26px rgba(0, 0, 0, 0.44), 0 2px 8px rgba(0, 0, 0, 0.28);
+    --shadow-accent: 0 2px 12px rgba(182, 164, 204, 0.22);
+}

@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dream AI 创意助手 · 使用教程</title>
+<style>
+:root {
+    --bg: #EFEDE8;
+    --surface: #FCFBF9;
+    --surface-soft: #F6F3EF;
+    --sunken: #E8E5DF;
+    --text-strong: #2B2733;
+    --text: #45404E;
+    --text-soft: #6E6875;
+    --muted: #9C96A1;
+    --border: #D8D2CA;
+    --accent: #8E7BA8;
+    --accent-soft: #EFEAF4;
+    --alt: #C98B72;
+    --alt-soft: #F7ECE6;
+    --ok: #6C8574;
+    --warn: #B58A50;
+}
+* { box-sizing: border-box; }
+body {
+    margin: 0;
+    padding: 40px 20px 80px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text);
+    background: var(--bg);
+}
+.wrap { max-width: 860px; margin: 0 auto; }
+header.hero {
+    display: flex; align-items: center; gap: 18px;
+    padding: 28px; margin-bottom: 28px;
+    background: var(--surface); border-radius: 18px;
+    box-shadow: 0 2px 10px rgba(43,39,51,.06);
+}
+.mark {
+    width: 56px; height: 56px; flex: 0 0 auto;
+    border-radius: 18px 18px 18px 6px;
+    background: linear-gradient(135deg, #9C89B4 0%, #8E7BA8 55%, #756490 100%);
+    position: relative;
+}
+.mark::after {
+    content: ""; position: absolute; right: 9px; bottom: 9px;
+    width: 13px; height: 13px; border-radius: 50%; background: var(--surface);
+}
+h1 { margin: 0; font-size: 26px; color: var(--text-strong); letter-spacing: -.01em; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 13px; letter-spacing: .04em; text-transform: uppercase; }
+h2 {
+    margin: 40px 0 14px; font-size: 19px; color: var(--text-strong);
+    padding-bottom: 8px; border-bottom: 1px solid var(--border);
+}
+h3 { margin: 26px 0 10px; font-size: 16px; color: var(--text-strong); }
+p { margin: 10px 0; }
+ul, ol { margin: 10px 0; padding-left: 22px; }
+li { margin: 5px 0; }
+code {
+    padding: 1px 6px; border-radius: 5px;
+    background: var(--accent-soft); color: #5D4F76;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 13px;
+}
+pre {
+    padding: 14px 16px; overflow: auto;
+    background: #2A2833; color: #DED9E2; border-radius: 10px;
+    font-family: "SF Mono", Menlo, Consolas, monospace; font-size: 12.5px; line-height: 1.6;
+}
+pre code { background: none; color: inherit; padding: 0; }
+.card {
+    padding: 18px 20px; margin: 16px 0;
+    background: var(--surface); border-radius: 14px;
+    box-shadow: 0 1px 4px rgba(43,39,51,.05);
+}
+.note {
+    padding: 12px 16px; margin: 14px 0; border-radius: 10px;
+    background: var(--accent-soft); color: #5D4F76; font-size: 14px;
+}
+.note.warn { background: var(--alt-soft); color: #8A5A42; }
+.note.ok { background: #E9EFEA; color: #4F6A57; }
+table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { color: var(--text-strong); font-weight: 600; background: var(--surface-soft); }
+tr:last-child td { border-bottom: none; }
+.steps { counter-reset: step; padding-left: 0; list-style: none; }
+.steps > li {
+    counter-increment: step; position: relative;
+    padding: 12px 0 12px 46px; margin: 0;
+    border-bottom: 1px dashed var(--border);
+}
+.steps > li:last-child { border-bottom: none; }
+.steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 12px;
+    width: 28px; height: 28px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;
+}
+.kbd {
+    display: inline-block; padding: 1px 7px; border-radius: 5px;
+    background: var(--surface); border: 1px solid var(--border);
+    box-shadow: 0 1px 0 var(--border);
+    font-family: "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text-strong);
+}
+footer { margin-top: 50px; text-align: center; color: var(--muted); font-size: 13px; }
+.toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; }
+.toc a {
+    padding: 6px 12px; border-radius: 999px; font-size: 13px;
+    background: var(--surface); color: var(--text-soft);
+    text-decoration: none; border: 1px solid var(--border);
+}
+.toc a:hover { background: var(--accent-soft); color: #5D4F76; border-color: transparent; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+    <div class="mark" aria-hidden="true"></div>
+    <div>
+        <h1>Dream AI 创意助手 · 使用教程</h1>
+        <p class="sub">Photoshop UXP Plugin · v1.0.0</p>
+    </div>
+</header>
+
+<nav class="toc">
+    <a href="#install">安装</a>
+    <a href="#channel">配置渠道</a>
+    <a href="#generate">生图</a>
+    <a href="#return">回写</a>
+    <a href="#toolbox">工具箱</a>
+    <a href="#engine">本地引擎</a>
+    <a href="#assets">画廊</a>
+    <a href="#batch">批处理</a>
+    <a href="#lang">语言与主题</a>
+    <a href="#faq">常见问题</a>
+</nav>
+
+<h2 id="install">一、安装插件</h2>
+
+<ol class="steps">
+    <li>在 Creative Cloud 桌面端安装 <strong>UXP Developer Tools</strong>。</li>
+    <li>打开 Photoshop。建议 24.0 及以上版本（原生生成式填充需要更高版本）。</li>
+    <li>启动 UXP Developer Tools，点左上角 <code>Add Plugin</code>，选择本插件目录里的
+        <code>manifest.json</code>。</li>
+    <li>在列表里点 <code>Load</code> 加载插件。</li>
+    <li>回到 Photoshop，菜单 <strong>增效工具（Plugins）→ Dream AI 创意助手</strong>
+        即可打开面板。建议把它拖到右侧面板组里长期停靠。</li>
+</ol>
+
+<div class="note">
+    <strong>面板宽度：</strong>左侧导航栏固定 68px，右侧主区自适应，把面板拖到
+    任意宽度都不会错位；窗口特别窄（&lt; 310px）时侧栏会只保留图标。
+</div>
+
+<h2 id="channel">二、配置服务渠道</h2>
+
+<p>打开面板后点右上角的 <strong>设置</strong> 进入设置页，展开 <strong>服务渠道</strong>：
+每个渠道填 <em>接口地址</em> 与 <em>API 密钥</em>，点 <strong>测试连接</strong>
+会返回可用模型数量，并把模型列表缓存到生图页的下拉框里。</p>
+
+<table>
+    <thead>
+        <tr><th>渠道</th><th>默认地址</th><th>密钥形态</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+        <tr><td>Photoshop 原生</td><td>—</td><td>不需要</td><td>直接调用 PS 生成式填充</td></tr>
+        <tr><td>OpenAI 兼容</td><td><code>https://api.openai.com/v1</code></td><td><code>sk-...</code></td><td>任何兼容网关都可填这里</td></tr>
+        <tr><td>xAI 官方</td><td><code>https://api.x.ai/v1</code></td><td><code>xai-...</code></td><td>图像与对话</td></tr>
+        <tr><td>自建 Grok 网关</td><td><code>http://127.0.0.1:8000/v1</code></td><td><code>g2a_...</code></td><td>本地自建，支持异步轮询</td></tr>
+    </tbody>
+</table>
+
+<p>地址填根地址或带 <code>/v1</code> 的地址都可以，插件会自动规范化。密钥只保存在本机
+<code>localStorage</code> 的 <code>dream-ai:settings</code> 里，不会上传到任何地方。</p>
+
+<h2 id="generate">三、开始生图</h2>
+
+<ol class="steps">
+    <li>在 Photoshop 里用选区工具圈出要处理的范围（想要整图效果就不必框选）。</li>
+    <li>打开 <strong>生图</strong> 页，点 <strong>读取选区</strong>，上方会出现选区预览与像素尺寸。</li>
+    <li>选择模式：<strong>文生图</strong> 或 <strong>选区图生图</strong>。</li>
+    <li>自己写提示词。插件不提供内置词库，写什么完全由你决定。</li>
+    <li>按需添加参考图（最多 4 张）：可以 <strong>用当前选区</strong> 或 <strong>上传图片</strong>。</li>
+    <li>选好渠道、模型、尺寸、数量，点 <strong>开始生成</strong>。</li>
+</ol>
+
+<h3>提示词输入</h3>
+<ul>
+    <li>提示词框右下角显示字数，上限 5000 字；插件不对内容做任何预设或补全。</li>
+    <li>在设置里可以配置 <strong>全局正向/负向提示词</strong>，会自动拼接进每次生成，
+        适合固定画风与固定禁忌。</li>
+    <li>负向提示词默认收起，勾选左侧开关即可展开。</li>
+</ul>
+
+<h2 id="return">四、结果回写 Photoshop</h2>
+
+<p>默认开启自动回写：任务完成后结果会作为新的像素图层落到原文档的原位置。
+回写参数在生图页的 <strong>回写 Photoshop</strong> 卡片里调整：</p>
+
+<table>
+    <thead><tr><th>选项</th><th>作用</th></tr></thead>
+    <tbody>
+        <tr><td>生成后自动回写</td><td>关掉后只在画廊里保留结果，需要手动回写</td></tr>
+        <tr><td>回写前自动校色</td><td>把回图色彩向原图/选区的低频色彩对齐，减少偏色</td></tr>
+        <tr><td>屏幕混合</td><td>适合辉光、光效类结果，与下层叠加而不是覆盖</td></tr>
+        <tr><td>边缘羽化</td><td>给回写图层加羽化蒙版，弱化拼贴痕迹</td></tr>
+    </tbody>
+</table>
+
+<div class="note warn">
+    回写目标按读取选区时记录的文档 ID 定位，不会贴错文档。如果那个文档已经关闭，
+    插件会直接报错停止，而不是把图贴到当前文档上。
+</div>
+
+<h2 id="toolbox">五、工具箱</h2>
+
+<p><strong>工具箱</strong> 页汇总了本地算法与常用操作，顶部标签切换：</p>
+
+<table>
+    <thead><tr><th>工具</th><th>用途</th></tr></thead>
+    <tbody>
+        <tr><td>辉光</td><td>多尺度辉光，含柔白、闪耀、星芒、宽银幕等风格，写回为屏幕混合图层</td></tr>
+        <tr><td>位移特效</td><td>热浪 / 气流 / 刀光 / 涟漪四类位移场，可调强度、范围、羽化、噪声细节</td></tr>
+        <tr><td>色彩融合</td><td>把回图色彩统计对齐到参考图，可选 Lab 均值方差、直方图、Reinhard、柔光、仅亮度</td></tr>
+        <tr><td>示波器</td><td>亮度波形、分量波形、直方图、矢量示波器，支持实时取样</td></tr>
+        <tr><td>常用操作</td><td>取消选区、复制图层、反选、前景色填充、自由变换、合并可见、拼合图像</td></tr>
+    </tbody>
+</table>
+
+<p>辉光与位移特效的流程都是：<strong>读取选区 → 预览 → 写入文档</strong>。
+预览不会改动文档，满意后再点写入。</p>
+
+<h2 id="engine">六、本地引擎（ComfyUI / Forge）</h2>
+
+<h3>ComfyUI</h3>
+<ol class="steps">
+    <li>启动 ComfyUI（默认端口 8188），确认插件里的地址一致。</li>
+    <li>在 ComfyUI 里搭好工作流，用 <em>导出（API 格式）</em> 保存 JSON。</li>
+    <li>在插件 <strong>ComfyUI</strong> 页粘贴 JSON 或导入文件，点 <strong>校验工作流</strong>。</li>
+    <li>有选区时点 <strong>读取选区</strong>：插件会上传图片并自动注入 LoadImage 节点。</li>
+    <li>点 <strong>开始生成</strong>，进度会在状态条与页面里同步。</li>
+</ol>
+
+<div class="note">
+    如果导入的是界面格式工作流（含 <code>nodes</code> 数组），校验会直接提示需要
+    API 格式，避免跑起来才发现没有输出。
+</div>
+
+<h3>Forge / SD WebUI</h3>
+<p>需要以 <code>--api</code> 参数启动 WebUI（默认端口 7860）。插件支持文生图与图生图、
+采样器与步数、CFG、降噪强度、批次、LoRA（可叠加多个）、ControlNet（可叠加多个），
+并提供 1 秒一次的进度轮询与中断。</p>
+
+<h2 id="assets">七、画廊</h2>
+
+<div class="note">
+    <strong>关于提示词：</strong>插件不内置任何提示词库，也没有"官方推荐提示词"。
+    提示词完全由你自己编写，插件只负责把它送到你选择的渠道。
+    如果想把常用的提示词存起来，可以在 Forge 页点 <strong>保存为预设</strong>，
+    它会作为你自己的条目存到本地（最多 50 条），不会随插件分发。
+</div>
+
+<h3>画廊</h3>
+<ul>
+    <li>每张生成结果都会自动归档，缩略图墙可直接点开查看。</li>
+    <li>支持 <strong>回写 PS</strong>（按当前选区落图）、<strong>下载</strong>、<strong>复用提示词</strong>、<strong>删除</strong>。</li>
+    <li>保留策略可选按数量、按天数或两者同时限制，也可以在设置里立即清理。</li>
+</ul>
+
+<h2 id="batch">八、批处理</h2>
+
+<ol class="steps">
+    <li>打开 <strong>批处理</strong> 页，在下方填写提示词、选择渠道与数量，点 <strong>加入批处理</strong>。</li>
+    <li>重复添加多条任务。</li>
+    <li>点 <strong>开始批处理</strong>，插件会串行执行并逐条更新状态。</li>
+    <li>需要时点 <strong>停止</strong>，已完成的条目保留，未开始的不再执行。</li>
+</ol>
+
+<div class="note">
+    并发数在设置里控制（默认 1）。Photoshop 的模态操作是串行的，把并发调高并不会
+    让回写变快，只会让排队更长。
+</div>
+
+<h2 id="lang">九、语言与主题</h2>
+
+<ul>
+    <li>侧栏底部的 <code>中 / EN</code> 按钮一键切换界面语言，立即生效，无需重启。</li>
+    <li>侧栏底部的 <code>◐ / ☀</code> 按钮切换亮色与暗色主题。</li>
+    <li>也可以在设置页里显式选择语言、主题与界面缩放（0.8×–1.6×）。</li>
+</ul>
+
+<h2 id="faq">十、常见问题</h2>
+
+<h3>点“读取选区”提示没有选区</h3>
+<p>请先在 Photoshop 里建立选区。如果选区只有几个像素，插件会判定为无效。
+另外确认当前有打开的文档，且文档不是索引色/位图模式。</p>
+
+<h3>生成成功但没有回写到文档</h3>
+<ul>
+    <li>检查回写卡片里的 <strong>生成后自动回写</strong> 是否被关掉。</li>
+    <li>查看底部状态条右侧的活动日志，回写失败会写明原因。</li>
+    <li>如果读取选区后关闭了那个文档，回写会被拒绝（这是刻意的保护）。</li>
+</ul>
+
+<h3>结果颜色和原图不一致</h3>
+<p>打开 <strong>回写前自动校色</strong>。校色会把回图的色彩统计对齐到原图选区，
+对“AI 回图整体偏亮/偏暖”这类问题效果最明显。也可以到工具箱用
+<strong>色彩融合</strong> 手动做一次，并挑选更合适的算法。</p>
+
+<h3>通道测试连接失败</h3>
+<ul>
+    <li>自建网关要确认服务已启动，地址里的端口正确。</li>
+    <li>密钥形态要对：Grok 网关是 <code>g2a_</code> 开头，xAI 是 <code>xai-</code> 开头。</li>
+    <li>401/403 表示密钥无效；429 表示触发限流，稍后再试。</li>
+</ul>
+
+<h3>ComfyUI 一直不出图</h3>
+<ul>
+    <li>先在 ComfyUI 界面里用同一个工作流跑通一次。</li>
+    <li>确认导出的是 <strong>API 格式</strong>，不是界面格式。</li>
+    <li>工作流里要有 LoadImage 节点，插件才能把选区图传进去。</li>
+</ul>
+
+<h3>面板里的滑块/色板点不动</h3>
+<p>这是自绘控件（UXP 的原生滑块与取色器无法控制样式），拖动滑块轨道即可；
+色板可直接在十六进制输入框里粘贴颜色值。</p>
+
+<h3>面板太窄，内容被压扁</h3>
+<p>插件针对竖排窄面板做了断点适配：参数会从两列变一列、次要文字会收起。
+如果仍然觉得挤，可以把面板拖宽，或在设置里把界面缩放调到 1.0 以下。</p>
+
+<footer>
+    Dream AI 创意助手 · 独立实现，未复制任何第三方插件的源码与素材。
+</footer>
+
+</div>
+</body>
+</html>

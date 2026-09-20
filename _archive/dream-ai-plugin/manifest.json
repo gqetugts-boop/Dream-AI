@@ -1,0 +1,51 @@
+{
+  "manifestVersion": 5,
+  "id": "com.dream.ai.studio",
+  "name": "Dream AI 创意助手",
+  "version": "1.0.0",
+  "main": "index.html",
+  "host": {
+    "app": "PS",
+    "minVersion": "24.0.0"
+  },
+  "requiredPermissions": {
+    "network": {
+      "domains": "all"
+    },
+    "localFileSystem": "fullAccess"
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "dreamAiPanel",
+      "label": {
+        "default": "Dream AI 创意助手"
+      },
+      "minimumSize": {
+        "width": 300,
+        "height": 400
+      },
+      "maximumSize": {
+        "width": 1200,
+        "height": 2400
+      },
+      "preferredDockedSize": {
+        "width": 460,
+        "height": 940
+      },
+      "preferredFloatingSize": {
+        "width": 460,
+        "height": 940
+      }
+    }
+  ],
+  "icons": [
+    {
+      "width": 23,
+      "height": 23,
+      "path": "assets/icons/plugin.png",
+      "scale": [1, 2],
+      "theme": ["darkest", "dark", "light", "lightest"]
+    }
+  ]
+}

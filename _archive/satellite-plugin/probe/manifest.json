@@ -1,0 +1,56 @@
+{
+  "manifestVersion": 5,
+  "id": "com.huanmeng.ai.satellite.probe",
+  "name": "幻梦卫星 能力探针",
+  "version": "0.0.1",
+  "main": "index.html",
+  "host": {
+    "app": "PS",
+    "minVersion": "26.0.0"
+  },
+  "requiredPermissions": {
+    "network": {
+      "domains": "all"
+    },
+    "localFileSystem": "fullAccess",
+    "ipc": {
+      "enablePluginCommunication": true
+    }
+  },
+  "entrypoints": [
+    {
+      "type": "panel",
+      "id": "probePanel",
+      "label": {
+        "default": "幻梦卫星 能力探针"
+      },
+      "minimumSize": {
+        "width": 240,
+        "height": 240
+      },
+      "maximumSize": {
+        "width": 1600,
+        "height": 1600
+      },
+      "preferredDockedSize": {
+        "width": 480,
+        "height": 640
+      },
+      "preferredFloatingSize": {
+        "width": 560,
+        "height": 720
+      }
+    },
+    {
+      "type": "command",
+      "id": "probeCommand",
+      "label": {
+        "default": "幻梦卫星：探针命令"
+      },
+      "shortcut": {
+        "mac": "Cmd+Shift+9",
+        "windows": "Ctrl+Shift+9"
+      }
+    }
+  ]
+}

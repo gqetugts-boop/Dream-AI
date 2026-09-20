@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#EFEDE8">
+    <title>Dream AI Studio</title>
+    <link rel="stylesheet" href="src/ui/tokens.css">
+    <link rel="stylesheet" href="src/ui/layout.css">
+    <link rel="stylesheet" href="src/ui/widgets.css">
+    <link rel="stylesheet" href="src/ui/pages.css">
+</head>
+<body data-theme="light" data-lang="zh-CN" data-accent="morandi">
+
+    <!-- 启动遮罩：主题与语言就绪前挡住首屏，避免闪烁 -->
+    <div id="bootVeil" class="boot-veil">
+        <div class="boot-mark" aria-hidden="true">
+            <span></span><span></span><span></span>
+        </div>
+        <div class="boot-caption" data-i18n="app.booting">正在启动…</div>
+    </div>
+
+    <div class="app-shell" id="appShell" hidden>
+
+        <!-- ============ 左侧栏 ============
+             竖排面板下的固定宽度导航：图标在上、文字在下。
+             结构与参考插件一致，宽度加宽到 68px 以容纳中文标签。 -->
+        <aside class="app-sidebar">
+            <div class="sidebar-logo" aria-hidden="true">
+                <span class="sidebar-logo-mark"></span>
+            </div>
+
+            <div class="sidebar-scroll">
+                <nav class="sidebar-nav" id="appNav" role="tablist" aria-label="模块导航"></nav>
+            </div>
+
+            <div class="sidebar-footer">
+                <div class="sidebar-footer-row">
+                    <button type="button" class="sidebar-tool" id="btnTaskTray"
+                            data-i18n-title="app.tasks" title="任务中心" aria-label="任务中心">
+                        <span class="sidebar-tool-glyph" aria-hidden="true">◔</span>
+                        <span class="sidebar-tool-badge" id="taskBadge" hidden>0</span>
+                    </button>
+                    <button type="button" class="sidebar-tool" id="btnLangToggle"
+                            data-i18n-title="app.switchLang" title="切换语言" aria-label="切换语言">
+                        <span class="sidebar-tool-text" id="langChipText">中</span>
+                    </button>
+                    <button type="button" class="sidebar-tool" id="btnThemeToggle"
+                            data-i18n-title="app.switchTheme" title="切换主题" aria-label="切换主题">
+                        <span class="sidebar-tool-glyph" id="themeGlyph" aria-hidden="true">◐</span>
+                    </button>
+                </div>
+                <button type="button" class="sidebar-log" id="btnActivityLog"
+                        data-i18n-title="app.activityLog" title="活动日志" aria-label="活动日志">
+                    <span class="sidebar-tool-status" id="activityDot" data-state="idle"></span>
+                    <span class="sidebar-log-label" data-i18n="logs.title">日志</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ============ 主区 ============ -->
+        <div class="app-main">
+            <header class="app-topbar">
+                <div class="topbar-title">
+                    <span class="topbar-brand">Dream AI</span>
+                    <span class="topbar-sep" aria-hidden="true">/</span>
+                    <span class="topbar-page" id="topbarPage" data-i18n="nav.workbench">生图</span>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" class="topbar-btn" id="btnOpenSettings"
+                            data-i18n-title="app.settings" title="设置" aria-label="设置">
+                        <span class="topbar-btn-glyph" aria-hidden="true">⚙</span>
+                        <span class="topbar-btn-label" data-i18n="nav.settings">设置</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 页面容器：所有页面由 JS 渲染，切换时只挂载激活页 -->
+            <main class="app-stage" id="appStage" role="tabpanel"></main>
+
+            <footer class="app-statusbar">
+                <span class="status-dot" id="statusDot" data-state="idle" aria-hidden="true"></span>
+                <div class="status-message" id="statusMessage" data-i18n="app.ready">就绪</div>
+                <div class="status-progress" id="statusProgress" hidden>
+                    <span class="status-progress-bar" id="statusProgressBar"></span>
+                </div>
+                <div class="status-meta" id="statusMeta"></div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- 任务托盘抽屉 -->
+    <aside class="drawer" id="taskDrawer" hidden aria-label="任务中心">
+        <div class="drawer-head">
+            <span class="drawer-title" data-i18n="tasks.title">任务中心</span>
+            <button type="button" class="drawer-close" id="btnCloseTaskDrawer" aria-label="关闭">×</button>
+        </div>
+        <div class="drawer-body" id="taskDrawerBody"></div>
+    </aside>
+
+    <!-- 活动日志抽屉 -->
+    <aside class="drawer" id="logDrawer" hidden aria-label="活动日志">
+        <div class="drawer-head">
+            <span class="drawer-title" data-i18n="logs.title">活动日志</span>
+            <div class="drawer-head-actions">
+                <button type="button" class="mini-btn" id="btnCopyLogs" data-i18n="logs.copy">复制</button>
+                <button type="button" class="mini-btn" id="btnClearLogs" data-i18n="logs.clear">清空</button>
+                <button type="button" class="drawer-close" id="btnCloseLogDrawer" aria-label="关闭">×</button>
+            </div>
+        </div>
+        <div class="drawer-body" id="logDrawerBody"></div>
+    </aside>
+
+    <!-- 模态层 -->
+    <div class="modal-layer" id="modalLayer" hidden>
+        <div class="modal-panel" id="modalPanel" role="dialog" aria-modal="true">
+            <div class="modal-head">
+                <span class="modal-title" id="modalTitle"></span>
+                <button type="button" class="drawer-close" id="btnCloseModal" aria-label="关闭">×</button>
+            </div>
+            <div class="modal-body" id="modalBody"></div>
+            <div class="modal-foot" id="modalFoot"></div>
+        </div>
+    </div>
+
+    <!-- ============================================================
+         静态图片池
+         ============================================================
+         UXP 对图片元素的处理有个实测差异：**标记里静态声明的 <img> 会渲染，
+         运行时 createElement('img') 创建的不会**（参考插件能显示的预览全部是
+         静态声明的）。所以这里预置若干个静态 <img>，需要显示图片时由 JS 把它们
+         搬到预览框里用。池子本身在流外且不可见，不占布局。
+         ============================================================ -->
+    <div class="image-pool" id="imagePool" aria-hidden="true">
+        <img alt=""><img alt=""><img alt=""><img alt=""><img alt="">
+        <img alt=""><img alt=""><img alt=""><img alt=""><img alt="">
+        <img alt=""><img alt=""><img alt=""><img alt=""><img alt="">
+        <img alt=""><img alt=""><img alt=""><img alt=""><img alt="">
+    </div>
+
+    <!-- 轻提示 -->
+    <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+    <!-- 宿主桥接：UXP 下拿到 photoshop 模块，浏览器预览下为 null -->
+    <script src="src/boot/host.js"></script>
+    <script src="src/boot/util.js"></script>
+    <script src="src/i18n/zh-CN.js"></script>
+    <script src="src/i18n/en-US.js"></script>
+    <script src="src/i18n/i18n.js"></script>
+    <script src="src/core/store.js"></script>
+    <script src="src/core/bus.js"></script>
+    <script src="src/core/logbus.js"></script>
+    <script src="src/core/ps-lock.js"></script>
+    <script src="src/core/theme.js"></script>
+    <script src="src/core/photo-encode.js"></script>
+    <script src="src/core/photo-io.js"></script>
+    <script src="src/core/photo-return.js"></script>
+    <script src="src/ui/widgets.js"></script>
+    <script src="src/ui/router.js"></script>
+    <script src="src/ui/shell.js"></script>
+    <script src="src/providers/registry.js"></script>
+    <script src="src/providers/openai-compat.js"></script>
+    <script src="src/providers/xai.js"></script>
+    <script src="src/providers/grok-gateway.js"></script>
+    <script src="src/providers/photoshop-native.js"></script>
+    <script src="src/features/task-queue.js"></script>
+    <script src="src/features/color-engine.js"></script>
+    <script src="src/core/ps-actions.js"></script>
+    <script src="src/tools/glow-core.js"></script>
+    <script src="src/tools/glow.js"></script>
+    <script src="src/tools/vfx-core.js"></script>
+    <script src="src/tools/vfx.js"></script>
+    <script src="src/tools/scope.js"></script>
+    <script src="src/local/comfyui.js"></script>
+    <script src="src/local/forge.js"></script>
+    <script src="src/features/gallery.js"></script>
+    <script src="src/features/batch.js"></script>
+    <script src="src/ui/pages/workbench.js"></script>
+    <script src="src/ui/pages/toolbox.js"></script>
+    <script src="src/ui/pages/vfx.js"></script>
+    <script src="src/ui/pages/comfyui.js"></script>
+    <script src="src/ui/pages/forge.js"></script>
+    <script src="src/ui/pages/chat.js"></script>
+    <script src="src/ui/pages/gallery.js"></script>
+    <script src="src/ui/pages/batch.js"></script>
+    <script src="src/ui/pages/settings.js"></script>
+    <script src="src/ui/pages/logs.js"></script>
+    <script src="src/ui/pages/about.js"></script>
+    <script src="src/boot/app.js"></script>
+</body>
+</html>
