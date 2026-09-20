@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- 托盘图标和取色器用 WinForms：WPF 自身没有这两个 API -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AssemblyName>HuanmengRing</AssemblyName>
+    <RootNamespace>HuanmengRing</RootNamespace>
+    <Version>1.0.0</Version>
+    <AssemblyTitle>幻梦圆环</AssemblyTitle>
+    <Product>幻梦圆环</Product>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!--
+      允许在非 Windows 主机上交叉编译 net8.0-windows。
+      在 Windows 上构建时这一条是无效果的，加着不碍事。
+      （macOS 上能不能连 XAML 一起编过，没有实测过 —— 见 README 的说明。）
+    -->
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- 单文件发布时把 WPF 的资源一起打进去 -->
+    <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
+  </PropertyGroup>
+
+  <!--
+    关掉 SDK 自动注入的两个 global using。
+
+    根因：UseWindowsForms=true 且 ImplicitUsings=enable 时，
+    WindowsDesktop SDK 会给**每一个** .cs 文件注入
+        global using System.Drawing;
+        global using System.Windows.Forms;
+    （见 Microsoft.NET.Sdk.WindowsDesktop.WindowsForms.props）
+
+    这和 WPF 的命名空间直接撞车，而且冲突面很大：
+        Color / Point / Size / Pen / Brush / FontFamily   ← Drawing vs Media
+        Button / TextBox / CheckBox / Panel / TabControl / Orientation
+        Application / MessageBox                          ← Forms vs WPF
+    每一处裸用都是 CS0104「ambiguous reference」，几十行一起挂。
+
+    本项目的约定本来就已经消歧了，所以直接移除是安全的：
+      · System.Drawing 的用法**全部是全限定**的（System.Drawing.Icon / Bitmap / Pen …）
+      · WinForms 的用法**全部走别名**（每个文件 using WinForms = System.Windows.Forms;）
+
+    如果你之后要新加 System.Drawing 的代码，记得继续写全限定名。
+  -->
+  <ItemGroup>
+    <Using Remove="System.Drawing" />
+    <Using Remove="System.Windows.Forms" />
+  </ItemGroup>
+
+</Project>

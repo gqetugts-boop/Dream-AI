@@ -1,0 +1,33 @@
+<Window x:Class="HuanmengRing.Views.PreferencesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="幻梦圆环 · 偏好设置"
+        Width="760" Height="660"
+        MinWidth="620" MinHeight="520"
+        WindowStartupLocation="CenterScreen"
+        ShowInTaskbar="True">
+    <!--
+        这里的 XAML 刻意保持极简：所有控件都在 PreferencesWindow.xaml.cs 里
+        用代码生成。原因是我没法编译验证，XAML 里少写一行就是一个运行时异常，
+        而代码生成的部分至少能被 C# 编译器检查一遍。
+    -->
+    <DockPanel Margin="14">
+        <Border DockPanel.Dock="Top" Padding="10" CornerRadius="6"
+                Background="#F4F6F9" BorderBrush="#DDE2E8" BorderThickness="1">
+            <DockPanel>
+                <ContentControl x:Name="PreviewHost" DockPanel.Dock="Left" />
+                <StackPanel x:Name="PresetPanel" Margin="16,0,0,0" VerticalAlignment="Center" />
+            </DockPanel>
+        </Border>
+
+        <Border DockPanel.Dock="Bottom" Margin="0,12,0,0">
+            <DockPanel>
+                <TextBlock x:Name="StatusText" DockPanel.Dock="Left" VerticalAlignment="Center"
+                           Foreground="#6B7280" TextWrapping="Wrap" MaxWidth="380" />
+                <StackPanel x:Name="ActionPanel" Orientation="Horizontal" HorizontalAlignment="Right" />
+            </DockPanel>
+        </Border>
+
+        <TabControl x:Name="Tabs" Margin="0,12,0,0" />
+    </DockPanel>
+</Window>

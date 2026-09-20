@@ -1,121 +1,141 @@
-# 幻梦AI Photoshop 插件
+# 幻梦圆环
 
-面向 Photoshop UXP 的 AI 修图、生成、回图与本地创意工具面板。
+Photoshop 画布上的**圆环菜单**助手 —— macOS 原生应用。
 
-## 职责
+按 `⌥⌘R`（或在 PS 里按住 `⌥` 点右键），圆环出现在鼠标位置，
+选完即走，不用打开面板、不占画布空间。
 
-- 提供图像生成、任务等待/重试、生成记录和提示词预设界面。
-- 连接 GRS、火山引擎、grok2api、Sub2API、xAI、Firefly、New API 与 RunningHub。
-- 读取 Photoshop 选区，并将结果校色后放回当前文档。
-- 提供辉光、粒子 VFX、示波器、灯光和常用 Photoshop 工具。
+## 为什么是原生应用而不是 UXP 插件
 
-## 第三方组件
+纯 UXP 做不到这件事，三条硬限制同时封死（均已实测确认）：
 
-本插件包含第三方作品，署名与许可证见同目录的 [`NOTICE`](NOTICE) 与
-[`LICENSE-Apache-2.0.txt`](LICENSE-Apache-2.0.txt)。
-本插件整体按 GPL-3.0 分发；第三方组件版权归各自作者所有。
+1. `entrypoints` 只有 `command` / `panel` 两种类型，**没有 `modal`**，
+   写进去整个插件加载失败；UXP 也没有 `window.open`
+2. 面板没有任何定位 / 无边框 / 置顶 API，**UI 无法超出面板边界**
+3. **没有任何全局鼠标或键盘 API**，Adobe 员工在开发者论坛明确确认：
+   "the core UXP APIs don't support keyboard shortcuts"，按键只能在面板获得焦点时捕获
 
-## 不负责
+所以画布上的浮层必须由一个独立的原生进程来画。
+Adobe 官方自己的 `desktop-helper-sample` 就是这个架构（UXP 插件 + 外部进程 + WebSocket）。
 
-- 不在界面文件中维护供应商私有服务实现。
-- 版本化提示词预设放在 `assets/presets/`，不在 `src/app/` 里维护。
-  例外：`src/features/reference-ui/tile-hemisynth.prompts.js` 内嵌了半合成提示词
-  （base64 分块存储，运行时解码），与上面的约定不一致，属历史遗留。
-- 不把发布产物当作业务源码依赖。
+**先例**：Radial（macOS 独立 App，画布上弹饼菜单）、RadialZ（ZBrush）。
+**但 Photoshop 上此前没有任何人做出来过** —— Adobe 官方功能请求 0 回复 3 票，
+GitHub 搜 `photoshop pie menu` 零结果。
+
+## 组成
+
+```text
+幻梦圆环.app（Swift / AppKit）
+   │  WebSocket 服务端 127.0.0.1:8799
+   │  下发：generate / setParam / applyPreset / readSelection / openChat
+   │  上报：state（文档、参数、选项、预设）  progress（进度、结果缩略图）
+   ▼
+幻梦AI 修图插件（UXP，客户端）
+     真正的生成、PS 操作、参数与预设都在主插件里
+```
+
+UXP 只有 WebSocket **客户端**、开不了监听端口（实测确认），所以服务端由助手来当。
+
+## 交互
+
+| 操作 | 效果 |
+| --- | --- |
+| `⌥⌘R` | 在鼠标位置唤出圆环 |
+| PS 里 `⌥` + 右键 | 同样唤出（只在 PS 前台时拦截，普通右键完全不受影响） |
+| 移动鼠标 | 高亮跟随，圆心显示当前项 |
+| 左键点扇区 / 数字键 `1`-`9` | 选中执行 |
+| 点带 `▸` 的扇区 | 进入下一级（悬停只高亮，不展开） |
+| 点圆心 / `←` / `Delete` | 返回上一级 |
+| `Esc` | 关闭整个圆环 |
+| 再按一次 `⌥右键` | 收起 |
+
+六个扇区：**生成 / 参数 / 预设 / 对话 / 读选区 / 关闭**。
+（顺序、名称、显隐都可以在偏好设置里改，这里说的是内置默认。）
+
+`Esc` 和数字键由 CGEventTap 吞掉，**不会漏给 Photoshop**
+（PS 里 Esc 是「取消当前操作」，漏过去会误伤）。
+
+## 构建与打包
+
+```bash
+bash native/build.sh run     # 构建并启动
+bash native/package.sh       # 产出 dist/幻梦圆环-<版本>.dmg
+bash native/autostart.sh install    # 开机自启（可选）
+```
+
+有 Apple Developer ID 的话，打包时传进去会自动用正式签名与公证：
+
+```bash
+SIGN_IDENTITY="Developer ID Application: XXX (TEAMID)" bash native/package.sh
+```
+
+没有也能分发，只是对方首次打开要在「隐私与安全性」里放行。
+
+## 权限
+
+需要 **辅助功能**（Accessibility）权限，用于 `⌥右键` 的 CGEventTap。
+没有授权时只有快捷键可用 —— 属于预期降级，不会崩。
+
+快捷键走 Carbon `RegisterEventHotKey`，**不需要任何权限**，
+所以辅助功能没授权时圆环依然能唤出。
+
+## 真机测试
+
+前置：Photoshop + UXP Developer Tools 运行中，主插件已加载。
+
+```bash
+node tests/main-plugin-bridge-test.mjs   # 桥接 + 状态快照
+node tests/ring-reconnect-test.mjs       # 断线自动重连（会杀掉再拉起助手）
+```
+
+## AppKit 踩过的坑
+
+- **`nonactivatingPanel` 是必须的**：普通窗口在 App 不活跃时第一次点击只用来激活，
+  点不到按钮，还会抢走 PS 焦点
+- **全局监听拦不住按键**（只能旁观）→ Esc / 数字键必须走 CGEventTap 才能吞掉
+- **`mouseMoved` 送达取决于窗口是不是 key** → 改用按帧轮询 `NSEvent.mouseLocation`
+- **WebSocket 帧首字节必须 `0x80 | opcode`**。只写 opcode 会发出非终止帧，
+  客户端一直等分片，`message` 事件永不触发
+- **连接回调要按连接身份判断**：`existing.cancel()` 是异步的，旧连接稍后的
+  `cancelled` 回调会把新连接抹掉，表现为插件每次重连都被踢
+- **切换层级时必须重置 `hoverIndex`**：新一层块数更少时，
+  旧索引会让 `drawHub()` 数组越界 → SIGTRAP 崩溃
 
 ## 目录
 
 ```text
-Dream-ps-ai/
-├── index.html                         # UXP 面板入口；视图模板 + 内联样式
-├── manifest.json                      # Photoshop UXP 清单
-├── manifest.webmanifest               # H5 / PWA 清单
-├── sw.js                              # H5 Service Worker（离线预缓存清单）
-├── src/
-│   ├── app/
-│   │   └── index.js                   # 应用启动、任务和 Provider 编排（单体）
-│   ├── theme.js                       # 亮/暗主题切换（独立文件，UXP 禁内联脚本）
-│   ├── features/
-│   │   ├── color-match/
-│   │   │   └── color-match.service.js # 纯图像颜色校准能力
-│   │   ├── gallery/
-│   │   │   └── gallery-store.js       # 画廊存储（UXP 文件系统 / IndexedDB）
-│   │   ├── glow/
-│   │   │   └── glow-engine.js         # 多尺度辉光与保护性合成
-│   │   ├── photoshop-core/
-│   │   │   └── ps-lock.js             # executeAsModal 串行队列
-│   │   ├── reference-ui/
-│   │   │   └── tile-hemisynth.prompts.js # 半合成提示词（内嵌 base64）
-│   │   ├── ring-bridge/
-│   │   │   └── ring-bridge.js         # 与幻梦圆环助手的 WebSocket 桥接（客户端）
-│   │   └── space-fx/
-│   │       └── space-fx-engine.js     # 热浪、气流、刀光位移特效
-│   ├── sw-register.js                 # H5/PWA 引导（UXP 下自动跳过）
-│   └── styles/                        # 仅 reference-tile-*.css 被 index.html 引入；
-│                                      # 主体样式内联在 index.html 的 <style> 中
-├── assets/
-│   ├── donation/                      # 关于页赞赏码
-│   └── presets/
-│       └── yushe.json                 # 版本化提示词预设
-├── icons/                             # UXP 图标资产（manifest.json 声明 D/N 两套主题）
-├── tests/
-│   ├── feature-services.test.js       # 校色、辉光、空间特效单元测试
-│   ├── gallery-store.test.js          # 画廊存储单元测试
-│   └── uxp-live-smoke.mjs             # Adobe UXP 宿主加载/回写冒烟测试
-├── server/presets/                    # 提示词同步服务端（纯静态，见其 README）
-├── NOTICE                             # 第三方署名（Apache-2.0 第 4(d) 条）
-├── LICENSE-Apache-2.0.txt             # 第三方组件许可证全文
-├── H5-部署说明.md
-└── 使用教程.html                       # 用户教程
+native/
+  HuanmengRing/                  Swift 包（SPM）
+    Sources/HuanmengRing/
+      main.swift                 入口 + 隐藏的调试 flag（--doctor 等）
+      AppDelegate.swift          串联：菜单栏 / 快捷键 / 事件 tap / 圆环 / 桥接
+
+      RingWindow.swift           无边框透明置顶窗口
+      RingView.swift             扇形绘制、命中测试、动画
+      RingModel.swift            菜单数据模型与几何
+      RingConfig.swift           配置层（读写 ~/.huanmeng-ring.json）
+      PreferencesWindow.swift    SwiftUI 首选项界面（外观/交互/内容/高级）
+
+      BridgeProtocol.swift       与插件的消息协议 + 菜单构建
+      BridgeServer.swift         零依赖 WebSocket 服务端
+      HotkeyManager.swift        Carbon 全局热键
+      AltRightClickTap.swift     ⌥右键 CGEventTap
+
+      ChatPanel.swift            画布下方的对话气泡（含生成进度条）
+      ToastWindow.swift          右下角浮动提示
+      ImagePanel.swift           出图结果浮窗
+
+      StandaloneEngine.swift     不连插件时的独立出图/对话
+      GrsClient.swift            GRS 接口客户端
+      PresetStore.swift          助手自己的预设库
+      ImageSource.swift          文件选择 / 截图监听
+      ImageExtract.swift         从各渠道响应里提取图片（宽松解析）
+      StatusFile.swift           给 --doctor 读的运行状态
+      Doctor.swift               环境自检
+      MenuDump.swift             菜单快照（--dump-menu，用于测试与调试）
+
+  build.sh / package.sh / autostart.sh / make-icon.sh / make-signing-cert.sh
+  deploy/                       安装与卸载脚本
+tests/                          真机桥接测试
+dist/                           打包产物（不进版本库）
 ```
-
-## 依赖方向
-
-- `index.html` 按固定顺序用 `<script src>` 加载 `src/features/*` 与 `src/theme.js`，
-  最后加载 `src/app/index.js`。**没有构建步骤，不使用 ES Module。**
-- `src/app/index.js` 是单体入口，通过 `window.<命名空间>` 消费各 feature。
-- `src/features/photoshop-core/ps-lock.js` 是唯一通过 `require()` 加载的 core 模块。
-- `src/features/color-match` 不访问 Provider、Photoshop 文档或 UI 状态。
-- `src/app` 可以编排 feature、Provider 和 UXP Host 能力。
-- `assets` 只保存数据资产，不依赖业务源码。
-- `server/` 是**独立交付物**，不参与插件运行 —— 它是给「设置 → 提示词同步服务器」
-  提供内容用的静态站点，细节见 `server/presets/README.md`。
-
-## 本地网关配置
-
-| 项目 | 插件默认地址 | 插件中填写的密钥 | 主要用途 |
-| --- | --- | --- | --- |
-| grok2api | `http://127.0.0.1:8000` | 后台 Client Keys 创建的 `g2a_...` | Grok Imagine 文生图、图片编辑与模型列表 |
-| Sub2API | `http://127.0.0.1:8080` | 用户后台创建的 `sk-...` | 聚合订阅账号并提供 Grok 图片生成/编辑接口 |
-| New API | `http://127.0.0.1:3000` | New API 中创建的渠道令牌 | 统一 OpenAI 兼容网关；生图模型映射名需在设置中单独填写 |
-
-三个地址都可以填写根地址或带 `/v1` 的地址，插件会在请求前规范化。`g2a_...`、Sub2API 的 `sk-...`、xAI 官方 Key 和服务管理员密码互不通用。连接检测统一读取 `/v1/models`；生图使用 `/v1/images/generations`，有原图或参考图时使用 `/v1/images/edits`。
-
-## 后续落包约定
-
-新功能放在 `src/features/<feature>/`，同一功能的界面、服务、Host 适配和样式应成套放置。旧入口只在实际修改相关业务时逐步拆分，避免纯目录整理造成高风险重构。
-
-## 验证
-
-```bash
-node --check src/app/index.js
-node --check src/features/color-match/color-match.service.js
-node --check src/features/gallery/gallery-store.js
-node --check src/features/glow/glow-engine.js
-node --check src/features/photoshop-core/ps-lock.js
-node --check src/features/reference-ui/tile-hemisynth.prompts.js
-node --check src/features/ring-bridge/ring-bridge.js
-node --check src/features/space-fx/space-fx-engine.js
-node --check src/sw-register.js
-node --check sw.js
-node tests/feature-services.test.js
-node tests/gallery-store.test.js
-```
-
-Photoshop 与 Adobe UXP Developer Tools 已运行并加载面板时，还可以执行：
-
-```bash
-node tests/uxp-live-smoke.mjs
-```
-
-该测试通过 Adobe 本机调试服务确认面板上下文、四个算法模块和 15 个工具入口；存在活动文档时，会创建 8×8 临时像素层调用 `imaging.putPixels`，随后立即删除该图层。
