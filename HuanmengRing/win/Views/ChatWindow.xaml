@@ -1,0 +1,81 @@
+<!--
+    对话气泡：圆环下方的输入条 + 回复框。
+
+    为什么单独开一个窗口，而不是画进圆环里：
+      1. 圆环中间的洞只有一百多个点，写一句中文问题根本不够
+      2. **中文输入法需要一个真正的文本控件，而且那个窗口必须是前台窗口**。
+         圆环是 ShowActivated=False 的置顶无边框窗、文字全靠自己画，
+         输入法（TSF）根本挂不上去 —— 这就是之前只能打英文的原因。
+         换成普通 Window + TextBox 之后，微软拼音、五笔、手写这些
+         系统输入法全部照常可用，一行输入法代码都不用自己写。
+
+    这个窗口是**可激活**的（ShowActivated=True），和圆环正好相反：
+    打字的时候必须让系统把输入法挂到它身上，打完关掉就把焦点还给 Photoshop。
+-->
+<Window x:Class="HuanmengRing.Views.ChatWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="幻梦·对话"
+        Width="520" Height="200"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        ShowActivated="True"
+        Topmost="True"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True">
+    <!--
+        MouseLeftButtonDown 挂在边框上 = 「按住气泡拖动窗口」。
+        输入框和回复区会自己处理鼠标事件（选中文字），事件不会冒泡到这里，
+        所以拖文字仍然是选文字、拖边缘才是移动窗口。
+    -->
+    <Border x:Name="Bubble" CornerRadius="14" Background="#F2181818"
+            BorderBrush="#26FFFFFF" BorderThickness="1" Padding="14,12,14,10"
+            MouseLeftButtonDown="OnBubbleMouseDown">
+        <Grid>
+            <Grid.RowDefinitions>
+                <!-- 聊天记录：只有发过消息之后才出现（输入条形态时整行收起） -->
+                <RowDefinition x:Name="TranscriptRow" Height="0" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
+            <!-- 聊天记录：整段来回都在这里，可滚动。只读、可选中复制。
+                 说话人前缀用颜色区分，所以要用 Inlines 逐段拼（代码里做） -->
+            <ScrollViewer x:Name="TranscriptScroll"
+                          Grid.Row="0"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled"
+                          Visibility="Collapsed">
+                <TextBlock x:Name="Transcript"
+                           TextWrapping="Wrap"
+                           FontSize="13"
+                           LineHeight="20" />
+            </ScrollViewer>
+
+            <!-- 输入框：一直可见。回车发送由代码处理（组字中的回车归输入法） -->
+            <TextBox x:Name="Input"
+                     Grid.Row="1"
+                     Margin="0,8,0,0"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     Foreground="#FFFFFF"
+                     CaretBrush="#FFFFFF"
+                     FontSize="14"
+                     VerticalContentAlignment="Center"
+                     AcceptsReturn="False"
+                     TextWrapping="NoWrap"
+                     MaxLines="1"
+                     InputMethod.IsInputMethodEnabled="True" />
+
+            <TextBlock x:Name="Hint"
+                       Grid.Row="2"
+                       Margin="0,8,0,0"
+                       Foreground="#6BFFFFFF"
+                       FontSize="11"
+                       TextTrimming="CharacterEllipsis" />
+        </Grid>
+    </Border>
+</Window>

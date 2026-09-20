@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    app.manifest — 声明「每显示器 DPI 感知」
+
+    不加这个会怎样：
+      Windows 会把整个进程当成 DPI 不感知，在 150% 缩放的屏幕上
+      把窗口位图整体拉伸 1.5 倍 —— 圆环的弧线和文字会明显发虚。
+      而且 GetCursorPos 返回的坐标也会被系统虚拟化，
+      和 SetWindowPos 用的物理像素对不上，圆环会偏。
+
+    加了之后：
+      GetCursorPos / SetWindowPos 拿到的都是**物理像素**，
+      WPF 的布局和 Canvas 坐标是 **DIP**，两者差一个 显示器缩放系数。
+      RingWindow.Reposition() 里用 NativeMethods.ScaleAt() 做换算，
+      就是为这个服务的。
+
+    PerMonitorV2 而不是 System：
+      多显示器且缩放不同（比如笔记本 150% + 外接 100%）时，
+      System 只在启动时读一次主屏 DPI，圆环挪到副屏上大小就错了。
+-->
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="HuanmengRing.app" />
+
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <!-- 旧接口，给 Windows 10 1607 之前用 -->
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/pm</dpiAware>
+      <!-- 新接口，Win10 1703+ 走这个 -->
+      <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2</dpiAwareness>
+    </windowsSettings>
+  </application>
+
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 / 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+      <!-- Windows 8.1（GetDpiForMonitor 从这里开始有） -->
+      <supportedOS Id="{1f676c76-80e1-4239-95bb-83d0f6d0da78}" />
+    </application>
+  </compatibility>
+</assembly>

@@ -1,0 +1,11 @@
+<Application x:Class="HuanmengRing.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+    <!--
+        没有 StartupUri：窗口、托盘、桥接服务全部在 App.xaml.cs 的 OnStartup 里手工装配。
+        ShutdownMode=OnExplicitShutdown 是必须的 —— 圆环窗口是靠 SetWindowPos 藏起来的，
+        WPF 并不知道它「不可见」，默认的关闭策略会在时机关错程序。
+    -->
+    <Application.Resources />
+</Application>
