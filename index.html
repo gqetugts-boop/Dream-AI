@@ -1,0 +1,3924 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1220">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>幻梦AI 修图插件</title>
+    <style>
+/* ============================================================
+   幻梦AI 3.1.1 · 浅色现代版 · 青蓝强调 · 侧边栏导航
+   PS UXP 兼容：不使用 CSS Grid，全部 flexbox；滑块全局隐藏；
+   下拉框统一风格；参考图 2x2 田字格；平台/模型 2 列 flex。
+   ============================================================ */
+
+:root {
+    --ui-scale: 1;
+    --bg-app: #f4f6fa;
+    --bg-sidebar: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-soft: #f8fafc;
+    --bg-input: #ffffff;
+    --bg-hover: #f1f5f9;
+    --bg-active: #ecfeff;
+    --bg-deep: #0f172a;
+    --text-main: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --border: #e2e8f0;
+    --border-strong: #cbd5e1;
+    --accent: #00d4ff;
+    --accent-deep: #0094ff;
+    --accent-soft: #ecfeff;
+    --accent-line: rgba(0, 212, 255, 0.35);
+    --accent-gradient: linear-gradient(135deg, #00d4ff 0%, #0094ff 100%);
+    --danger: #ef4444;
+    --danger-soft: #fef2f2;
+    --success: #10b981;
+    --success-soft: #ecfdf5;
+    --warning: #f59e0b;
+    --warning-soft: #fffbeb;
+    --radius-xl: 14px;
+    --radius-lg: 10px;
+    --radius-md: 8px;
+    --radius-sm: 6px;
+    --control-h: 32px;
+    --gap: 10px;
+    --sidebar-w: 60px;
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
+    --shadow-md: 0 2px 8px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 8px 24px rgba(15, 23, 42, 0.08);
+    --shadow-accent: 0 4px 14px rgba(0, 212, 255, 0.22);
+}
+
+/* ============================================================
+   暗色主题：通过 <body class="theme-dark"> 启用
+   用 class 而非 data 属性，UXP 兼容性更好
+   仅覆盖颜色变量，布局与组件结构保持不变
+   ============================================================ */
+.theme-dark {
+    --bg-app: #0b1220;
+    --bg-sidebar: #111c2e;
+    --bg-card: #131f33;
+    --bg-card-soft: #0f1a2b;
+    --bg-input: #0f1a2b;
+    --bg-hover: #1c2a40;
+    --bg-active: #0c3550;
+    --bg-deep: #050a14;
+    --text-main: #f1f5f9;
+    --text-secondary: #b8c5d6;
+    --text-muted: #5e7090;
+    --border: #243349;
+    --border-strong: #344663;
+    --accent: #00d4ff;
+    --accent-deep: #38bdf8;
+    --accent-soft: #082f49;
+    --accent-line: rgba(0, 212, 255, 0.42);
+    --danger: #f87171;
+    --danger-soft: #3f1d1d;
+    --success: #34d399;
+    --success-soft: #0f2e24;
+    --warning: #fbbf24;
+    --warning-soft: #3a2a0a;
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.45);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
+    --shadow-accent: 0 4px 14px rgba(0, 212, 255, 0.3);
+}
+
+/* 暗色主题下：下拉箭头颜色提亮，避免在深色背景里看不清 */
+.theme-dark select,
+
+
+.theme-dark .custom-select-trigger,
+
+
+.theme-dark .app-shell select,
+
+
+.theme-dark #settings select,
+
+
+.theme-dark #chat select,
+
+
+.theme-dark #batch select{
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' fill='none' stroke='%2394a3b8' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+/* 暗色主题下：辉光/示波器预览背景与画布保持深色更自然 */
+.theme-dark .tt-live-preview{ background: #050a14; }
+
+/* 暗色主题下：select option 在原生弹层里也保持深色 */
+.theme-dark select option { background: #131f33; color: var(--text-main); }
+
+* { box-sizing: border-box; }
+
+html, body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background: var(--bg-app);
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", Arial, sans-serif;
+    font-size: calc(12px * var(--ui-scale));
+    -webkit-font-smoothing: antialiased;
+}
+
+body { display: flex; flex-direction: row; }
+
+button, input, select, textarea { font-family: inherit; }
+button, select, .tab, .custom-select-trigger, .custom-select-option { cursor: pointer; }
+
+/* ============ 整体布局：侧边栏 + 主内容 ============ */
+.container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    height: 100%;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* ============ 侧边栏 ============ */
+.app-sidebar {
+    flex: 0 0 var(--sidebar-w);
+    width: var(--sidebar-w);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-sidebar);
+    border-right: 1px solid var(--border);
+    padding: 10px 6px;
+    gap: 4px;
+    overflow: hidden;
+}
+
+.sidebar-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin: 0 auto 10px;
+    border-radius: 11px;
+    background: var(--accent-gradient);
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    box-shadow: var(--shadow-accent);
+}
+
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+/*
+ * 这里原本是 .sidebar-nav::-webkit-scrollbar { width: 0 }，想藏掉侧栏的滚动条 ——
+ * 但 UXP 不认这个伪元素，那条规则从来没生效过。
+ * 现在没出问题只是因为侧栏项目还不够多；一旦内容超过面板高度，
+ * 就会在 52px 宽的侧栏里挤进一条 16px 的滚动条。
+ * 没有可靠的纯 CSS 办法，真要修得让侧栏自己保证不溢出（减少项目/缩小间距）。
+ */
+
+.sidebar-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+/* 侧边栏里的独立功能分组（对话，位于「应用」下方）。
+   这里只做上下留白，刻意不加边框 / 底色 / 内边距：
+   tab 自己在 hover 和 active 时已经有背景与描边（见 .app-sidebar .tab），
+   外面再套一层框会让「对话」在未选中时也顶着一个框，跟 应用 / 设置 不像一套。
+   间距用 margin 而不是 gap —— .sidebar-nav 已有 gap，UXP 对嵌套 flex 的 gap 支持不稳。 */
+.sidebar-group {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    margin: 8px 0;
+    box-sizing: border-box;
+}
+
+/* 侧边栏 tab 按钮（保留 .tab 与 data-tab，JS 切换逻辑不变） */
+.app-sidebar .tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 46px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--text-secondary);
+    gap: 3px;
+    transition: background .15s, color .15s;
+    text-align: center;
+}
+.app-sidebar .tab:hover {
+    background: var(--bg-hover);
+    color: var(--text-main);
+}
+.app-sidebar .tab.active {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+}
+
+.sidebar-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1;
+}
+/* 侧边栏 SVG 图标。
+   与侧边栏的文本字形图标保持同一设计语言：单色、实心、14px。
+   用 currentColor 填充，所以 hover / active 时自动跟随 tab 的文字颜色，
+   不需要为选中态单独写规则。 */
+.sidebar-icon svg {
+    display: block;
+    width: 14px;
+    height: 14px;
+    flex: 0 0 auto;
+}
+
+/* 按钮 / 标题里的「图标 + 文字」组合（由 uiIconLabel 生成）。
+   间距用 margin 而不是 gap —— UXP 对 flex 容器 gap 的支持不稳。 */
+.ui-icon-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+}
+.ui-icon-label svg {
+    display: block;
+    width: 13px;
+    height: 13px;
+    flex: 0 0 auto;
+    margin-right: 5px;
+}
+.sidebar-label {
+    font-size: calc(9px * var(--ui-scale));
+    font-weight: 600;
+    line-height: 1;
+    text-align: center;
+    letter-spacing: 0.2px;
+}
+
+/* ============ 主内容区 ============ */
+.app-main {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg-app);
+}
+
+.app-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border);
+    flex: 0 0 auto;
+    min-height: 44px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+    gap: 8px;
+}
+.brand-copy { min-width: 0; }
+.brand-title-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+.section-title {
+    margin: 0;
+    color: var(--text-main);
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+}
+.brand-cross { color: var(--text-muted); font-size: calc(10px * var(--ui-scale)); }
+.brand-edition {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: calc(9px * var(--ui-scale));
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+.brand-subtitle {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: calc(8px * var(--ui-scale));
+    font-weight: 700;
+    letter-spacing: 0.16em;
+}
+
+.app-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+#status.status {
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+    line-height: 1.4;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.icon-action-btn {
+    width: 30px;
+    min-width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    transition: all .15s;
+}
+.icon-action-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+}
+
+/* 主题切换按钮：亮色显示月亮（点击切到暗），暗色显示太阳（点击切到亮） */
+.theme-toggle-btn { font-size: 13px; line-height: 1; }
+.theme-toggle-btn::before { content: none; }
+
+/* ============ App Shell 与 Workspace ============ */
+.app-shell,
+.section {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow: hidden;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* splash 隐藏（保留 .app-shell .splash-open 逻辑给 JS） */
+.splash-screen { display: none !important; }
+.app-shell.splash-open .tabs,
+.app-shell.splash-open .workspace { display: none !important; }
+.app-shell:not(.splash-open) .splash-screen { display: none !important; }
+
+.workspace {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto !important;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: var(--gap);
+    padding: 0 0 8px 0;
+}
+
+/*
+ * 右侧不留内边距，让滚动条贴着面板右边缘。
+ *
+ * 背景（实测数据，别凭感觉改）：
+ *   UXP 的滚动条固定占 16px，而且三种标准做法全都无效 ——
+ *     overflow-y: overlay  → 无效
+ *     scrollbar-width: none → 无效
+ *     ::-webkit-scrollbar   → 无效（下面那几条规则从来没生效过）
+ *   所以那 16px 收不回来，只能把它周围的留白让出去：
+ *     改之前 面板 420 → 内容 330（右侧浪费 28px = 10 内边距 + 2 内边距 + 16 滚动条）
+ *     改之后 面板 420 → 内容 342（只剩滚动条自己那 16px，而且贴着右边缘）
+ *   滚动条贴着边缘是正常观感；悬在距边 10px 的地方才像「空了一大块」。
+ */
+.app-shell { padding-right: 0; }
+
+/*
+ * 原来这里有 4 条 .workspace::-webkit-scrollbar* 规则，全删了 —— UXP 不认这个伪元素，
+ * 它们一行都没生效过（实测滚动条 16px，而规则里写的是 8px）。留着只会误导下一个改样式的人。
+ */
+
+.tab-content { display: none; }
+/* 兜底：任何非 active 的 tab-content 绝对不显示，防止其他类规则意外覆盖 */
+.tab-content:not(.active) { display: none !important; }
+.tab-content.active {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    flex: 0 0 auto;
+    min-height: 0;
+    width: 100%;
+    min-width: 0;
+    align-self: stretch !important;
+    max-width: 100%;
+}
+/* tab-content 内部子项也不被压缩，保证每张卡片完整显示 */
+.tab-content.active > * { flex: 0 0 auto; width: 100%; max-width: 100%; min-width: 0; align-self: stretch; }
+
+/* ============ 卡片 / 模块 ============ */
+.module-hero,
+.module-card,
+.form-group,
+.settings-card,
+.parameter-card,
+.notice-block,
+.preview-container,
+#chatHistory,
+#batchTaskList,
+.log-container,
+#chatSelectionPreview {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+.module-hero {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-card) 60%);
+    border-color: var(--accent-line);
+    border-left: 3px solid var(--accent);
+}
+
+.module-title {
+    margin: 0;
+    color: var(--text-main);
+    font-size: calc(13px * var(--ui-scale));
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+}
+
+.module-desc {
+    margin-top: 4px;
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+    line-height: 1.45;
+}
+
+.module-badge {
+    flex: 0 0 auto;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: calc(9px * var(--ui-scale));
+    font-weight: 800;
+    letter-spacing: 0.04em;
+}
+
+.card-title {
+    margin: 0 0 8px;
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 750;
+    line-height: 1.35;
+}
+
+#chat .form-group,
+#settings .form-group,
+#logs .form-group,
+#batch .form-group {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+
+#chat #chatHistory,
+#chat #chatSelectionPreview,
+#settings .settings-card,
+#logs .log-container,
+#batch #batchTaskList {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+}
+
+.form-group > label,
+
+
+.parameter-item > label,
+
+
+.img2img-inline-cell > label,
+
+
+label{
+    display: block;
+    margin: 0 0 5px;
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 650;
+    line-height: 1.35;
+}
+
+.info-text,
+
+
+.placeholder-text,
+
+
+.chat-input-hint,
+
+
+.settings-actions-tip,
+
+
+.log-time{
+    color: var(--text-muted);
+    font-size: calc(9px * var(--ui-scale));
+    line-height: 1.5;
+}
+
+.empty-state {
+    color: var(--text-muted);
+    font-size: calc(10px * var(--ui-scale));
+    text-align: center;
+    padding: 16px 8px;
+}
+
+.parameter-row-1,
+
+
+.custom-resolution-row,
+
+
+.btn-row,
+
+
+.preset-actions,
+
+
+#chat .chat-action-row {
+    display: flex;
+    flex-direction: row;
+    gap: 6px;
+    width: 100%;
+    min-width: 0;
+}
+.parameter-row-1 > *,
+
+.custom-resolution-row > *,
+
+.btn-row > *,
+
+.preset-actions > *,
+
+#chat .chat-action-row > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.field-stack,
+.parameter-group,
+.settings-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.parameter-item { min-width: 0; }
+
+/* ============ 输入控件 ============ */
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+select,
+textarea,
+#logSearch,
+.custom-select-trigger {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    outline: none;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="url"],
+input[type="search"],
+input[type="tel"],
+input[type="password"],
+input[type="number"],
+select,
+#logSearch,
+.custom-select-trigger {
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 10px;
+    line-height: normal;
+    text-align: left;
+}
+
+textarea {
+    min-height: 80px;
+    padding: 8px 10px;
+    line-height: 1.5;
+    resize: vertical;
+}
+
+input:focus,
+textarea:focus,
+select:focus,
+#logSearch:focus,
+.custom-select-trigger:focus,
+.custom-select.open .custom-select-trigger {
+    border-color: var(--accent);
+    background: var(--bg-input);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+    outline: none;
+}
+
+input::placeholder,
+textarea::placeholder { color: var(--text-muted); }
+
+input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: var(--accent-deep);
+    vertical-align: middle;
+    margin-right: 5px;
+}
+
+.checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+}
+
+/* ============ 下拉框统一风格（项目硬约束） ============ */
+select,
+
+
+.custom-select-trigger,
+
+
+.app-shell select,
+
+
+.app-shell .custom-select-trigger,
+
+
+#settings select,
+
+
+#chat select,
+
+
+#batch select{
+    height: var(--control-h) !important;
+    min-height: var(--control-h) !important;
+    padding: 0 26px 0 10px !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--bg-input) !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1L5 5L9 1' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+    background-size: 10px 6px !important;
+    color: var(--text-main) !important;
+    box-shadow: none !important;
+    font-size: calc(11px * var(--ui-scale)) !important;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 1;
+}
+
+select:focus,
+.custom-select-trigger:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12) !important;
+}
+
+/* ============================================================
+   内联预渲染式下拉框（自动上下展开）
+   JS 在 src/app/index.js 中负责：预渲染选项、计算剩余空间、
+   自动判断向上 / 向下展开（positionCustomSelectPanel）。
+   此处 CSS 负责呈现 trigger 与 panel 的外观。
+   ============================================================ */
+.custom-select {
+    position: relative;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow: visible;
+}
+.custom-select-trigger { width: 100% !important; max-width: 100% !important; }
+/* 内联面板铺满宽度；浮层面板的宽度由 positionCustomSelectPanel 内联写入。 */
+.custom-select > .custom-select-panel { width: 100% !important; max-width: 100% !important; }
+/* 注意：这里不再给 .custom-select 或其 hostGroup 设 z-index。
+   它们一旦有 z-index 就会各自建立层叠上下文，把面板困在里面，
+   面板再怎么调高也只能在那层罩子内排序，因而被其它卡片盖住。
+   只有面板自身带 z-index（见下方 .custom-select > .custom-select-panel），
+   它才能在根层叠上下文里参与排序、压过普通内容。 */
+
+/* 隐藏原生 select，由自定义 trigger 呈现 */
+.native-select-hidden {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 1px !important;
+    height: 1px !important;
+    min-width: 1px !important;
+    min-height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    appearance: none !important;
+}
+
+/* 触发框：仿原生 select 外观 + 右侧箭头 */
+.custom-select-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-input);
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    text-align: left;
+    cursor: pointer;
+    user-select: none;
+    box-sizing: border-box;
+    appearance: none;
+}
+.custom-select-trigger::after {
+    content: "";
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-right: 1.5px solid var(--text-muted);
+    border-bottom: 1.5px solid var(--text-muted);
+    transform: translateY(-2px) rotate(45deg);
+    transition: transform 0.16s ease, border-color 0.16s ease;
+}
+.custom-select.open .custom-select-trigger::after {
+    transform: translateY(2px) rotate(225deg);
+    border-color: var(--accent);
+}
+.custom-select.open .custom-select-trigger,
+.custom-select-trigger:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.12);
+    outline: none;
+}
+.custom-select.disabled .custom-select-trigger {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* 面板：默认隐藏，展开时显示；一律就地内联展开（见 shouldUseInlineFakeSelect）。 */
+.custom-select-panel {
+    display: none;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-lg);
+    transform: none;
+}
+.custom-select-panel.open { display: block !important; pointer-events: auto !important; }
+
+/* 内联展开的兜底定位。具体值由 positionCustomSelectPanel 内联写入，
+   这里只用非 !important 声明兜底，避免与内联值打架。 */
+.custom-select > .custom-select-panel {
+    position: relative;
+    left: 0;
+    right: auto;
+    top: auto;
+    bottom: auto;
+    width: 100%;
+    min-width: 100%;
+    max-height: 220px;
+    margin-top: 6px;
+}
+
+.custom-select-option {
+    min-height: 30px;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    color: var(--text-secondary);
+    background: transparent;
+    font-size: calc(11px * var(--ui-scale));
+    line-height: 1.35;
+    cursor: pointer;
+    user-select: none;
+    word-break: break-word;
+}
+.custom-select-option:hover,
+.custom-select-option.active,
+.custom-select-option.selected {
+    background: var(--accent-soft) !important;
+    color: var(--accent-deep) !important;
+}
+
+/* ============ 滑块全局隐藏（项目硬约束） ============ */
+input[type="range"],
+
+
+.tt-control-row input[type="range"] {
+    display: none !important;
+}
+
+/* ============ 按钮 ============ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    height: var(--control-h);
+    min-height: var(--control-h);
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 650;
+    line-height: 1;
+    cursor: pointer;
+    transition: all .15s;
+    box-shadow: var(--shadow-sm);
+}
+.btn:hover { transform: translateY(-1px); box-shadow: var(--shadow-md); }
+.btn:active { transform: translateY(0); }
+.btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+
+.btn-primary {
+    background: var(--accent-gradient);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: var(--shadow-accent);
+}
+.btn-primary:hover { filter: brightness(1.05); }
+
+.btn-secondary {
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    border-color: var(--border-strong);
+}
+.btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent-deep);
+    background: var(--accent-soft);
+}
+
+/* 危险操作（清空画廊等）。二次确认后进入 is-armed 状态，视觉上明确区分。 */
+.btn-danger {
+    background: var(--bg-card);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+.btn-danger:hover {
+    background: var(--danger-soft);
+    color: var(--danger);
+    border-color: var(--danger);
+}
+.btn-danger.is-armed {
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+}
+
+.btn-success {
+    background: var(--success);
+    color: #fff;
+    border-color: transparent;
+}
+.btn-success:hover { filter: brightness(1.05); }
+
+.danger-action { color: var(--danger); border-color: var(--danger); }
+.danger-action:hover { background: var(--danger-soft); color: var(--danger); }
+
+.btn-row .btn { flex: 1 1 0; min-width: 0; }
+
+/* ============ 预览容器 ============ */
+.preview-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+    padding: 8px;
+    overflow: hidden;
+    background: var(--bg-card-soft);
+    border-style: dashed;
+}
+.placeholder-text {
+    color: var(--text-muted);
+    font-size: calc(10px * var(--ui-scale));
+    text-align: center;
+}
+.selection-preview-img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+/* ============ 生图工作台 (img2img) ============ */
+#img2img.active { display: flex; flex-direction: column; gap: 8px; }
+
+.tt-stage-card {
+    position: relative;
+    height: 110px;
+    min-height: 110px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card-soft);
+}
+.tt-stage-card .preview-container {
+    height: 100%;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+}
+.tt-selection-info {
+    position: absolute;
+    left: 8px;
+    bottom: 7px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(15, 23, 42, 0.78);
+    color: #e2e8f0;
+    font-size: calc(9px * var(--ui-scale));
+}
+
+/* 对齐工具栏 */
+.tt-align-toolbar {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 2px;
+    padding: 3px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+}
+.tt-align-btn,
+
+.tt-tool-btn,
+
+.tt-icon-btn{
+    border: 0;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    cursor: pointer;
+    transition: all .15s;
+}
+.tt-align-btn {
+    flex: 1 1 auto;
+    height: 26px;
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 600;
+}
+.tt-align-btn:hover { background: var(--bg-hover); color: var(--text-main); }
+.tt-align-btn.active {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    box-shadow: inset 0 -2px 0 var(--accent);
+}
+.tt-tool-btn {
+    flex: 0 0 57px;
+    border-left: 1px solid var(--border);
+    border-radius: 0;
+    color: var(--accent-deep);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 600;
+}
+.tt-tool-btn:hover { background: var(--accent-soft); }
+
+/* 渲染按钮行 */
+.tt-render-row {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 6px;
+    min-height: 36px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.tt-render-row #btnImg2Img {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    border: 0;
+    border-radius: var(--radius-md);
+    background: var(--accent-gradient);
+    box-shadow: var(--shadow-accent);
+    color: #fff;
+    font-size: calc(13px * var(--ui-scale)) !important;
+    font-weight: 700;
+    letter-spacing: 2px !important;
+    box-sizing: border-box;
+}
+.tt-render-row #btnImg2Img:hover { filter: brightness(1.05); transform: translateY(-1px); }
+.tt-render-row #imageCount {
+    width: 47px !important;
+    min-width: 47px !important;
+    max-width: 47px !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    padding: 0 5px !important;
+    border-color: var(--border-strong) !important;
+    background: var(--bg-card) !important;
+    text-align: center;
+    box-sizing: border-box;
+}
+/* wheelchair 主操作布局：渲染为主按钮，数量为紧凑辅助控件。 */
+.tt-render-row > #btnImg2Img {
+    flex: 1 1 auto !important;
+    width: auto !important;
+}
+.tt-render-row > .custom-select {
+    flex: 0 0 72px !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+}
+.tt-render-row > .custom-select .custom-select-trigger {
+    width: 72px !important;
+    min-width: 72px !important;
+    padding-left: 12px !important;
+}
+.tt-render-row .custom-select-panel[data-select-for="imageCount"] {
+    position: static !important;
+    left: auto !important;
+    right: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 72px !important;
+    min-width: 72px !important;
+    max-width: 72px !important;
+    max-height: 170px !important;
+    margin-top: 4px;
+    transform: none !important;
+}
+.tt-render-row > .custom-select.open { align-self: flex-start; }
+
+/* ============ 提示词卡片 ============ */
+.tt-section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+    flex-wrap: wrap;
+}
+.tt-pro-chip {
+    margin-left: 4px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: 8px;
+    font-weight: 800;
+    vertical-align: middle;
+    letter-spacing: 0.5px;
+}
+.tt-preset-inline { display: flex; flex:1 1 100%; width:100%; gap:8px; min-width:0; }
+.tt-preset-inline > .custom-select { flex:1 1 0; width:50% !important; min-width:0; }
+.tt-preset-inline .custom-select-trigger { width:100% !important; min-width:0 !important; min-height:42px; }
+.tt-preset-inline select {
+    width: 76px;
+    height: 24px;
+    min-height: 24px;
+    padding: 0 22px 0 6px !important;
+    font-size: calc(9px * var(--ui-scale));
+}
+.prompt-textarea {
+    width: 100%;
+    height: 90px;
+    min-height: 90px;
+    padding: 8px 10px !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--bg-input) !important;
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    line-height: 1.5;
+    resize: vertical;
+}
+.tt-editor-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 24px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-muted);
+}
+.tt-editor-tools { display: flex; gap: 3px; }
+.tt-icon-btn {
+    width: 24px;
+    height: 20px;
+    color: var(--text-muted);
+    border-radius: var(--radius-sm);
+}
+.tt-icon-btn:hover { background: var(--accent-soft); color: var(--accent-deep); }
+#imgPromptCharCount { font-size: calc(9px * var(--ui-scale)); }
+
+.tt-preset-save-row {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 5px;
+    margin-top: 6px;
+}
+.tt-preset-save-row input { flex: 1 1 auto; }
+.tt-preset-save-row .btn { flex: 0 0 48px; }
+.tt-preset-save-row input,
+.tt-preset-save-row .btn {
+    height: 26px;
+    min-height: 26px;
+    font-size: calc(10px * var(--ui-scale));
+    padding: 0 8px;
+}
+
+/* ============ 参考图卡片（2x2 田字格，项目硬约束） ============ */
+.reference-panel { width: 100%; }
+.reference-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+.reference-count {
+    color: var(--accent-deep);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 700;
+}
+.reference-image-slots {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 6px;
+    min-height: 0;
+}
+.reference-slot {
+    width: calc(50% - 3px) !important;
+    max-width: calc(50% - 3px) !important;
+    min-width: 0 !important;
+    height: 78px !important;
+    min-height: 78px !important;
+    flex: 0 0 calc(50% - 3px) !important;
+    box-sizing: border-box !important;
+    border: 1px dashed var(--border-strong) !important;
+    border-radius: var(--radius-md) !important;
+    background: var(--bg-card-soft) !important;
+    color: var(--text-muted) !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: calc(14px * var(--ui-scale)) !important;
+    font-weight: 700 !important;
+    position: relative !important;
+    transition: all .15s;
+}
+.reference-slot:hover {
+    border-color: var(--accent) !important;
+    color: var(--accent-deep) !important;
+    background: var(--accent-soft) !important;
+}
+.reference-slot img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* ============ 平台与模型（2x2 田字格 flex） ============ */
+.tt-platform-2x2-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+.tt-platform-cell {
+    width: 42% !important;
+    box-sizing: border-box !important;
+    min-width: 0;
+    margin: 0 4% 8px 4%;
+}
+.tt-platform-cell label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: calc(10px * var(--ui-scale));
+    color: var(--text-secondary);
+    font-weight: 650;
+}
+.tt-platform-cell select,
+.tt-platform-cell .tt-ratio-display {
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+.tt-ratio-display {
+    display: flex;
+    align-items: center;
+    height: var(--control-h);
+    padding: 0 10px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+    box-sizing: border-box;
+}
+.tt-balance-label {
+    color: var(--accent-deep);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 700;
+}
+.provider-summary {
+    margin-top: 6px;
+    padding: 6px 10px;
+    border-radius: var(--radius-md);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+}
+.provider-summary-badge { display: none; }
+.provider-summary-detail {
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    line-height: 1.45;
+}
+.tt-toolbox-item {
+    display: flex;
+    min-height: 44px;
+    padding: 6px 8px;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    color: var(--text-main);
+    text-align: left;
+    cursor: pointer;
+    transition: all .15s;
+}
+.tt-toolbox-item:hover {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+}
+.tt-toolbox-item:disabled { opacity: .55; }
+.tt-toolbox-item strong {
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 700;
+}
+.tt-toolbox-item small {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: calc(8px * var(--ui-scale));
+}
+
+/* ============ 工具箱（重建版 tt-toolb-* / tt-section-title） ============ */
+.tt-section-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0 6px;
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 800;
+    letter-spacing: .03em;
+}
+.tt-section-title::before {
+    content: '';
+    flex: 0 0 3px;
+    width: 3px;
+    height: 12px;
+    border-radius: 2px;
+    background: var(--accent-gradient);
+}
+/* 特效与分析：双列卡片网格 */
+.tt-toolb-tools {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+}
+.tt-toolb-tool {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+.tt-toolb-tool:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+}
+.tt-toolb-tool.is-disabled { opacity: .55; }
+.tt-toolb-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.tt-toolb-name {
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.tt-toolb-tag {
+    flex: 0 0 auto;
+    padding: 2px 7px;
+    border-radius: 5px;
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-size: calc(8px * var(--ui-scale));
+    font-weight: 700;
+    letter-spacing: .3px;
+    white-space: nowrap;
+}
+.tt-toolb-desc {
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    line-height: 1.4;
+}
+.tt-toolb-tool .btn { align-self: flex-end; white-space: nowrap; }
+.tt-toolb-control {
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.tt-toolb-control label {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    font-weight: 600;
+}
+.tt-toolb-control select {
+    width: 100%;
+    height: var(--control-h);
+}
+.tt-toolb-control .btn { flex: 0 0 auto; }
+/* 图层辅助 / 滤镜与修复：双列并排 */
+.tt-toolb-dual {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    width: 100%;
+}
+.tt-toolb-dual-col {
+    flex: 1 1 50%;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+/* 图层辅助 / 滤镜与修复：快捷操作网格 */
+.tt-toolb-grids {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+.tt-toolb-grid {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.tt-toolb-grid > .tt-toolbox-item {
+    flex: 1 1 calc(50% - 3px);
+    min-width: 0;
+    box-sizing: border-box;
+}
+.tt-toolb-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+}
+.tt-toolb-option label { font-weight: 600; min-width: 0; }
+.tt-toolb-option input {
+    width: 56px;
+    height: 26px;
+    color: var(--text-main);
+}
+.tt-toolb-note {
+    margin-top: 4px;
+    padding: 8px 10px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    line-height: 1.5;
+}
+
+/* ============ 设置页 ============ */
+/* 注意：不在此处设置 display，避免覆盖 .tab-content 的 display:none 导致非激活页泄露 */
+.settings-redesigned { flex-direction: column; gap: 8px; }
+.settings-priority-card {
+    padding: 0 !important;
+    overflow: hidden;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-lg) !important;
+    background: var(--bg-card) !important;
+}
+.settings-group { margin: 0; border: 0; border-radius: 0; background: transparent; overflow: hidden; }
+.settings-group-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    min-height: 34px;
+    padding: 0 12px;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    background: var(--bg-card-soft);
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+}
+.settings-group-toggle::after { content: '▾'; color: var(--text-muted); font-size: calc(9px * var(--ui-scale)); }
+.settings-group-toggle[aria-expanded="false"]::after { content: '▸'; }
+/* 折叠必须用 !important 才能压过 .system-prompt-grid 的 display:flex !important，
+   否则「11. 系统提示词」这一组永远收不起来。 */
+.settings-group-toggle[aria-expanded="false"] + .settings-group-body { display: none !important; }
+.settings-group-toggle:hover { background: var(--bg-hover); }
+.settings-group-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 10px;
+    border-top: 0;
+    background: var(--bg-card);
+}
+.settings-card {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+}
+.settings-actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.settings-actions .btn { flex: 0 0 auto; }
+.settings-actions-tip {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: calc(9px * var(--ui-scale));
+}
+.provider-settings-grid { display: flex; flex-direction: column; gap: 8px; }
+.settings-save-wrap {
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+}
+.settings-save-standalone { padding: 10px; }
+#settings #btnSaveSettings {
+    width: 100%;
+    height: 36px;
+    min-height: 36px;
+    background: var(--accent-gradient);
+    color: #fff;
+    border: 0;
+    box-shadow: var(--shadow-accent);
+    font-size: calc(12px * var(--ui-scale));
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+.task-center-list { display: flex; flex-direction: column; gap: 7px; }
+.task-card {
+    padding: 9px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+.task-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.task-card-title {
+    min-width: 0;
+    color: var(--text-main);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.task-state {
+    padding: 3px 8px;
+    border-radius: 5px;
+    background: var(--bg-hover);
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    font-weight: 700;
+    white-space: nowrap;
+}
+.task-state.running, .task-state.returning {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+}
+.task-state.waiting_return { background: var(--warning-soft); color: var(--warning); }
+.task-state.completed { background: var(--success-soft); color: var(--success); }
+.task-state.failed, .task-state.cancelled { background: var(--danger-soft); color: var(--danger); }
+.task-progress-track {
+    height: 4px;
+    margin: 7px 0;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--bg-hover);
+}
+.task-progress-bar {
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-gradient);
+    transition: width .2s ease;
+}
+.task-card-meta {
+    color: var(--text-muted);
+    font-size: calc(9px * var(--ui-scale));
+    line-height: 1.5;
+}
+.task-card-actions {
+    display: flex;
+    gap: 5px;
+    margin-top: 7px;
+}
+.task-card-actions .btn {
+    min-height: 26px;
+    height: 26px;
+    font-size: calc(9px * var(--ui-scale));
+}
+
+.logs-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.logs-search-group { flex: 1 1 200px; min-width: 0; }
+.logs-action-row { flex: 0 0 auto; }
+.log-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 520px;
+    overflow-y: auto;
+}
+.log-entry {
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    font-size: calc(10px * var(--ui-scale));
+    line-height: 1.5;
+}
+.log-entry .log-reload-prompt { display: none; margin-top: 6px; }
+.log-entry.expanded .log-reload-prompt { display: inline-flex; }
+
+/* ============ 聊天页 ============ */
+#chatHistory {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+.chat-input-hint {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: calc(9px * var(--ui-scale));
+}
+
+/* ============ VFX 应用编辑器 ============ */
+.vfx-app-shell { display: flex; flex-direction: column; gap: 8px; }
+.vfx-workflow-hero { gap: 8px; }
+.vfx-step-card { display: flex; flex-direction: column; gap: 8px; }
+.vfx-trajectory-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.vfx-trajectory-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 80px;
+    border: 1px dashed var(--border-strong);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-muted);
+    font-size: calc(10px * var(--ui-scale));
+    padding: 8px;
+}
+.vfx-note-strip {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+.vfx-note-pill {
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-card-soft);
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+}
+.vfx-input-note {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: calc(9px * var(--ui-scale));
+}
+.vfx-color-picker-stack {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+}
+.vfx-color-preview-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+.vfx-color-preview-box {
+    width: 30px;
+    height: 30px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    flex: 0 0 30px;
+}
+.vfx-color-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: 30px;
+    padding: 0 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+    color: var(--text-main);
+    font-size: calc(10px * var(--ui-scale));
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.vfx-hidden-native { display: none !important; }
+.vfx-hue-strip {
+    position: relative;
+    width: 100%;
+    height: 14px;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #f00 0%, #ff0 17%, #0f0 33%, #0ff 50%, #00f 67%, #f0f 83%, #f00 100%);
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+.vfx-hue-thumb {
+    position: absolute;
+    top: -2px;
+    width: 6px;
+    height: 18px;
+    border: 2px solid #fff;
+    border-radius: 2px;
+    background: transparent;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+    transform: translateX(-50%);
+}
+.vfx-slider-meta {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+}
+.vfx-pseudo-slider {
+    position: relative;
+    width: 100%;
+    height: 22px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-hover);
+    margin-bottom: 8px;
+    cursor: pointer;
+    overflow: hidden;
+}
+.vfx-pseudo-slider-track {
+    position: absolute;
+    inset: 0;
+}
+.vfx-pseudo-slider-fill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    background: var(--accent-gradient);
+    opacity: 0.85;
+}
+.vfx-pseudo-slider-thumb {
+    position: absolute;
+    top: 50%;
+    width: 10px;
+    height: 18px;
+    border: 2px solid #fff;
+    border-radius: 2px;
+    background: var(--accent-deep);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.2);
+    transform: translate(-50%, -50%);
+}
+.vfx-prompt-preview-text {
+    min-height: 60px;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+    color: var(--text-secondary);
+    font-size: calc(10px * var(--ui-scale));
+    line-height: 1.5;
+}
+.pseudo-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+.pseudo-choice-dot {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-input);
+    flex: 0 0 16px;
+}
+.pseudo-checkbox-row input[type="checkbox"]:checked + .pseudo-choice-dot {
+    background: var(--accent-gradient);
+    border-color: var(--accent);
+}
+.pseudo-checkbox-row input[type="checkbox"]:checked + .pseudo-choice-dot::after {
+    content: '✓';
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+}
+.vfx-step-actions,
+
+.vfx-trajectory-actions{
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.vfx-step-actions .btn,
+
+.vfx-trajectory-actions .btn,
+
+.vfx-workflow-hero .btn{
+    min-height: 30px;
+    height: 30px;
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.app-editor-shell { display: flex; flex-direction: column; gap: 8px; }
+.app-editor-body { display: flex; flex-direction: column; gap: 8px; }
+.app-launch-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.app-launch-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 56px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+    cursor: pointer;
+    transition: all .15s;
+}
+.app-launch-card:hover {
+    border-color: var(--accent);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+.app-launch-content { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.app-launch-title { color: var(--text-main); font-size: calc(11px * var(--ui-scale)); font-weight: 700; }
+.app-launch-desc { color: var(--text-muted); font-size: calc(9px * var(--ui-scale)); line-height: 1.4; }
+
+/* ============ 工具编辑器（辉光/VFX/示波器/灯光） ============ */
+.tt-tool-editor,
+#toolEditor,
+#toolEditorContent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+}
+.tt-tool-editor { display: flex; flex-direction: column; gap: 8px; }
+.tt-tool-editor-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+.tt-tool-editor-grid {
+    display: flex !important;
+    flex-direction: row !important;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: 8px;
+    align-items: flex-start;
+}
+.tt-tool-editor-grid > *:first-child { flex: 1 1 0; min-width: 0; }
+.tt-tool-editor-grid > *:last-child { flex: 0 0 220px; }
+.tt-live-preview {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 260px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    background: #0f172a;
+}
+.tt-live-preview > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 430px;
+    object-fit: contain;
+}
+.tt-live-preview-empty {
+    padding: 24px;
+    color: #94a3b8;
+    text-align: center;
+    font-size: calc(10px * var(--ui-scale));
+}
+.tt-glow-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-height: 430px;
+    object-fit: contain;
+    background: #0f172a;
+}
+.tt-blend-divider {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    transform: translateX(-1px);
+    background: rgba(255,255,255,.94);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.22), 0 0 10px rgba(0,212,255,.55);
+    pointer-events: none;
+    z-index: 3;
+}
+.tt-glow-preview {
+    width: 100%;
+    height: 520px;
+    min-height: 360px;
+}
+.tt-glow-preview-stage {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+.tt-glow-preview .tt-glow-canvas {
+    flex: 0 0 auto;
+    width: auto;
+    height: auto;
+    max-width: none;
+    max-height: none;
+    object-fit: fill;
+    transform-origin: center center;
+}
+.tt-glow-preview .tt-live-preview-empty {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+}
+.tt-preview-zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 4;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    width: auto;
+    height: 38px;
+    padding: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.34);
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.9);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+}
+.tt-preview-zoom-btn {
+    flex: 0 0 30px;
+    width: 30px;
+    min-width: 30px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #dbeafe;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 28px;
+    text-align: center;
+}
+.tt-preview-zoom-btn:hover { background: rgba(71, 85, 105, 0.8); }
+.tt-preview-zoom-btn:active { background: #0ea5e9; color: #ffffff; }
+.tt-preview-zoom-btn.tt-preview-reset {
+    flex-basis: 48px;
+    width: 48px;
+    border-radius: 7px;
+    background: rgba(51, 65, 85, 0.72);
+    color: #f8fafc;
+    font-size: 11px;
+    font-weight: 600;
+}
+#glowControls .tt-control-row { min-height: 42px; }
+.tt-glow-slider {
+    position: relative;
+    width: 100%;
+    height: 30px;
+    cursor: pointer;
+    touch-action: none;
+}
+.tt-glow-slider-track {
+    position: absolute;
+    left: 7px;
+    right: 7px;
+    top: 12px;
+    height: 6px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    background: var(--bg-hover);
+    overflow: hidden;
+}
+.tt-glow-slider-fill {
+    width: 0;
+    height: 100%;
+    border-radius: 3px;
+    background: var(--accent-gradient);
+}
+.tt-glow-slider-thumb {
+    position: absolute;
+    top: 7px;
+    left: 7px;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-radius: 5px;
+    background: var(--accent-deep);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    transform: translateX(-50%);
+}
+.tt-glow-slider:hover .tt-glow-slider-track { border-color: var(--accent-deep); }
+.tt-glow-color-presets {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+}
+.tt-glow-color-swatch {
+    flex: 0 0 25px;
+    width: 25px;
+    min-width: 25px;
+    height: 25px;
+    padding: 0;
+    border: 2px solid rgba(148, 163, 184, 0.5);
+    border-radius: 7px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.35);
+}
+.tt-glow-color-swatch.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.2), inset 0 0 0 1px rgba(255,255,255,0.6);
+}
+.tt-glow-color-name { font-size: calc(8px * var(--ui-scale)); }
+.tt-tool-controls { display: flex; flex-direction: column; gap: 7px; }
+.tt-control-card {
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+}
+.tt-control-row {
+    display: flex;
+    flex-direction: row;
+    gap: 7px;
+    align-items: center;
+    min-height: 32px;
+}
+.tt-control-row > *:first-child { flex: 0 0 90px; }
+.tt-control-row > *:nth-child(2) { flex: 1 1 auto; min-width: 0; }
+.tt-control-row > *:last-child { flex: 0 0 46px; }
+.tt-control-row.tt-control-row-wide > *:nth-child(2),
+.tt-control-row.tt-control-row-wide > *:last-child {
+    flex: 1 1 auto;
+    width: auto;
+    max-width: none;
+    min-width: 0;
+}
+.tt-control-row + .tt-control-row { border-top: 1px solid var(--border); }
+.tt-control-row label {
+    color: var(--text-secondary);
+    font-size: calc(9px * var(--ui-scale));
+    margin: 0;
+}
+.tt-control-row output {
+    color: var(--text-muted);
+    text-align: right;
+    font-size: calc(9px * var(--ui-scale));
+}
+.tt-control-row input[type="color"] {
+    width: 100%;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--bg-input);
+}
+.tt-tool-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.tt-tool-actions .btn { flex: 1 1 120px; }
+
+/* 所有主界面内容容器跟随 workspace 宽度，避免旧固定列宽留下侧边空位。 */
+.workspace,
+.module-hero,
+.module-card,
+.settings-group,
+.settings-group-body,
+.field-stack,
+.parameter-card,
+.app-editor-shell,
+.app-editor-body,
+.app-launch-wrap,
+.tt-tool-editor,
+#toolEditorContent,
+#runninghubHome,
+#appsHome,
+#taskCenterList,
+#logContainer {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+.tt-prompt-preview {
+    min-height: 128px !important;
+    max-height: 230px;
+    resize: vertical;
+    font-size: calc(9px * var(--ui-scale)) !important;
+    line-height: 1.5;
+}
+.tt-light-orb {
+    position: absolute;
+    width: 42%;
+    height: 42%;
+    transform: translate(-50%, -50%);
+    border-radius: 12px;
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+.tt-light-direction {
+    position: absolute;
+    width: 38%;
+    height: 2px;
+    transform-origin: 0 50%;
+    background: linear-gradient(90deg, rgba(255,255,255,0.85), transparent);
+    pointer-events: none;
+}
+
+/* ============ Toast ============ */
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%) translateY(20px);
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: var(--bg-deep);
+    color: #fff;
+    font-size: calc(11px * var(--ui-scale));
+    font-weight: 600;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: all .25s;
+    z-index: 9999;
+    max-width: 80%;
+    text-align: center;
+}
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* ============ Splash（默认隐藏） ============ */
+.splash-screen { display: none !important; }
+
+/* ============ 响应式 ============ */
+@media (max-width: 360px) {
+    .sidebar-label { font-size: calc(8px * var(--ui-scale)); }
+    .app-sidebar .tab { height: 42px; }
+    .brand-subtitle { display: none; }
+    #status.status { max-width: 90px; }
+}
+@media (max-width: 520px) {
+    .tt-tool-editor-grid { flex-direction: column !important; }
+    .tt-tool-editor-grid > *:first-child,
+    .tt-tool-editor-grid > *:last-child {
+        flex: 1 1 auto;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+    }
+    .tt-tool-controls,
+    .tt-control-card,
+    .tt-tool-actions,
+    .tt-tool-actions .btn { width: 100%; max-width: 100%; }
+    .tt-live-preview { min-height: 200px; }
+    .tt-glow-preview { height: 460px; min-height: 360px; }
+}
+
+/* ============ 杂项兼容 ============ */
+.notice-block { display: flex; flex-direction: column; gap: 6px; }
+.notice-section { color: var(--text-secondary); font-size: calc(10px * var(--ui-scale)); line-height: 1.5; }
+.notice-section strong { color: var(--text-main); margin-right: 4px; font-weight: 700; }
+.compact-credit { padding: 4px 0; }
+.splash-meta-grid { display: flex; flex-direction: column; gap: 6px; }
+.splash-meta-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-card-soft);
+}
+.splash-meta-item span { color: var(--text-muted); font-size: calc(10px * var(--ui-scale)); }
+.splash-meta-item strong {
+    color: var(--text-main);
+    font-size: calc(11px * var(--ui-scale));
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+.splash-close-btn { width: 100%; min-height: 38px; }
+.splash-hero { background: linear-gradient(135deg, var(--accent-soft), var(--bg-card)); border-color: var(--accent-line); }
+.parameter-card { display: flex; flex-direction: column; gap: 8px; }
+.settings-help-card { background: var(--bg-card); }
+
+/* 隐藏的批处理 tab */
+.tab[data-tab="batch"][style*="display: none"] { display: none !important; }
+
+/* UXP 兼容：workspace 作为唯一滚动容器；tab-content 不裁剪自身内容 */
+.app-shell .tab-content.active { overflow: visible; }
+
+/* UXP 兼容：防止 select 选项在 UXP 中显示异常 */
+select option { background: var(--bg-card); color: var(--text-main); }
+
+/* ============================================================
+   UXP 预渲染下拉最终覆盖层
+   必须放在基础组件之后，避免 button/select 的宿主默认样式重新覆盖。
+   ============================================================ */
+:root {
+    --select-render-bg: linear-gradient(180deg, #f8fbff 0%, #edf7ff 100%);
+    --select-render-trigger: #edf7ff;
+    --select-render-border: rgba(0, 148, 255, 0.55);
+    --select-render-panel: #ffffff;
+    --select-render-hover: #e6f8ff;
+}
+.theme-dark {
+    --select-render-bg: linear-gradient(180deg, #182a43 0%, #112137 100%);
+    --select-render-trigger: #112137;
+    --select-render-border: rgba(56, 189, 248, 0.58);
+    --select-render-panel: #0b1728;
+    --select-render-hover: #123653;
+}
+/* 这里原本是 `.custom-select { isolation: isolate; }`。
+   它会额外制造一层嵌套 stacking context，而 UXP 对此处理比浏览器严格，
+   是下拉面板被同层内容盖住的元凶之一。wrapper 展开时本来就会拿到
+   position:relative + z-index:5000，已经足够，无需再隔离。 */
+/* 刻意不给 z-index：wrapper / hostGroup 一旦带 z-index 就会各自建立层叠上下文，
+   把面板的 z-index 困在里面，只能在那层罩子内排序，因而被别的卡片盖住。
+   同源项目验证可用的写法是——只有面板自己带 z-index，
+   这样它直接在根层叠上下文里参与排序，压过所有普通内容。 */
+.custom-select.open,
+.select-open-host {
+    position: relative !important;
+    overflow: visible !important;
+}
+/* 触发器底色只由 --select-render-trigger 决定，主题差异走变量。
+   历史坑：这里原来是两条互相打架的 !important 规则——先把背景写死成亮色
+   #edf7ff，紧接着又用 .theme-dark .custom-select-trigger 覆盖成 #112137。
+   两条同特异性、同为 !important，只靠书写顺序分胜负，实测暗色那条没有生效，
+   于是暗色主题下所有下拉框都拿到亮色底，白底白字完全没法用。
+   改成单条规则 + 变量后不再依赖层叠顺序。
+   注意不要在这里写死颜色，也不要拆成两条规则。 */
+.custom-select-trigger,
+.app-shell .custom-select-trigger,
+.theme-dark .custom-select-trigger,
+.theme-dark .app-shell .custom-select-trigger {
+    background-color: var(--select-render-trigger) !important;
+    background-image: none !important;
+    border: 1px solid var(--select-render-border) !important;
+    border-left-width: 3px !important;
+    border-radius: 9px !important;
+    color: var(--text-main) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 3px 10px rgba(0,0,0,.12) !important;
+    font-weight: 700 !important;
+    letter-spacing: .01em;
+}
+.custom-select-trigger::after {
+    border-color: var(--accent-deep) !important;
+    border-width: 0 2px 2px 0 !important;
+}
+.custom-select.open .custom-select-trigger {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(0,212,255,.14), 0 8px 20px rgba(0,0,0,.2) !important;
+}
+.custom-select-panel,
+.theme-dark .custom-select-panel {
+    display: none;
+    padding: 5px !important;
+    border: 1px solid var(--select-render-border) !important;
+    border-radius: 10px !important;
+    background: var(--select-render-panel) !important;
+    background-image: none !important;
+    opacity: 1 !important;
+    box-shadow: 0 18px 44px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.03) inset !important;
+}
+/* ============ 下拉一律内联展开 ============
+   历史：这里曾用过三种浮层方案（body 级 portal + position:fixed、
+   portal + absolute、留在 .custom-select 内 + absolute），实测
+   （getComputedStyle）确认面板的 position / z-index / 背景 / 坐标全部正确，
+   但 UXP 合成器在这个布局下始终不按全局 z-index 排序，面板仍被同页
+   其它卡片盖住。因此改为内联展开：面板在文档流内把下方内容推开，
+   结构上不可能被遮挡。这也是本插件 presetCategory / promptPreset 等
+   预设下拉一直在用、并记录在 2.1.1 教程里的做法。
+   下面是内联定位的最终覆盖，参与排序的 z-index 只需 1。 */
+.custom-select > .custom-select-panel {
+    position: relative !important;
+    top: auto !important;
+    bottom: auto !important;
+    left: 0 !important;
+    right: auto !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-height: 220px !important;
+    margin: 6px 0 0 0 !important;
+    z-index: 1 !important;
+}
+
+.custom-select-option {
+    position: relative;
+    z-index: 1;
+    background: var(--select-render-panel) !important;
+    color: var(--text-secondary) !important;
+}
+.custom-select-option:hover,
+.custom-select-option.active,
+.custom-select-option.selected {
+    background: var(--select-render-hover) !important;
+    color: var(--text-main) !important;
+}
+.custom-select-option.selected { box-shadow: inset 3px 0 0 var(--accent-deep); }
+
+/* 常见 Photoshop 面板宽度下改为单列，预览与参数都吃满可用宽度。 */
+@media (max-width: 900px) {
+    .tt-tool-editor-grid { flex-direction: column !important; }
+    .tt-tool-editor-grid > *:first-child,
+    .tt-tool-editor-grid > *:last-child {
+        flex: 1 1 auto !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        min-width: 0 !important;
+    }
+    .tt-tool-controls,
+    .tt-control-card,
+    .tt-tool-actions { width: 100% !important; max-width: 100% !important; }
+}
+
+/* 预设保存弹窗：结构与 wheelchair 的 preset-save-overlay 保持一致。 */
+.preset-save-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 6000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, .66);
+}
+.preset-save-dialog {
+    width: min(360px, 100%);
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+    padding: 16px 18px;
+    border: 1px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--bg-card);
+    box-shadow: 0 18px 50px rgba(0, 0, 0, .48);
+}
+.preset-save-title { margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); color: var(--text-main); font-weight: 700; }
+.preset-save-field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+.preset-save-field input, .preset-save-field select { width: 100%; }
+.preset-save-summary { display: flex; flex-direction: column; gap: 4px; margin: 8px 0; padding: 8px 10px; border-radius: 6px; background: var(--bg-card-soft); color: var(--text-secondary); font-size: calc(10px * var(--ui-scale)); line-height: 1.45; overflow-wrap: anywhere; }
+.preset-save-btns { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+/* 2.1.1 · 生成页折叠、全宽预览、H5 上传与记录时间线 */
+.tt-stage-card.has-selection {
+    height: auto !important;
+    min-height: 132px;
+}
+.tt-stage-card.has-selection .preview-container {
+    height: auto !important;
+    min-height: 132px;
+}
+.tt-stage-card.has-selection #previewImage {
+    display: block;
+    width: 100% !important;
+    height: auto !important;
+    max-width: none !important;
+    max-height: none !important;
+    border-radius: 0;
+    object-fit: contain;
+}
+.tt-collapse-btn {
+    flex: 0 0 min(260px, 46%);
+    width: min(260px, 46%);
+    min-width: 150px;
+    min-height: 36px;
+    height: 36px;
+    padding: 6px 13px;
+    border: 1px solid var(--accent);
+    border-left: 5px solid var(--accent);
+    border-radius: 14px;
+    background: var(--panel-soft);
+    color: var(--text-main);
+    font-size: calc(10px * var(--ui-scale));
+    font-weight: 800;
+    text-align: left;
+    box-shadow: inset 0 0 0 1px rgba(22,197,255,.08);
+}
+.tt-image-input-card { padding-top:12px !important; padding-bottom:12px !important; }
+.tt-image-input-card > .tt-section-head { min-height:38px; margin:0 !important; }
+.tt-preset-inline .custom-select-panel[data-inline="true"] { position:relative !important; inset:auto !important; width:100% !important; min-width:100% !important; max-height:220px !important; margin-top:6px; }
+.tt-collapse-btn::after { content: '⌃'; float:right; color:var(--accent); }
+.tt-collapse-btn[aria-expanded="false"]::after { content: '⌄'; }
+.tt-image-input-card.is-collapsed .tt-collapsible-body { display: none !important; }
+.tt-image-input-card.is-collapsed { height:68px !important; min-height:68px !important; padding:10px 14px !important; overflow:hidden !important; }
+.tt-image-input-card.is-collapsed > .tt-section-head { height:46px; min-height:46px; }
+.browser-upload-actions {
+    display: none;
+    align-items: center;
+    gap: 7px;
+    padding: 8px;
+    border: 1px solid #484848;
+    border-radius: 4px;
+    background: #383838;
+}
+.runtime-browser .browser-upload-actions { display: none !important; }
+.runtime-browser #selectionPreview { cursor: pointer; border: 1px dashed var(--accent) !important; }
+.gallery-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+/* 不用 gap / `> *`（UXP 对两者支持不稳），用显式 ID 定间距 */
+.gallery-toolbar-btns { display:flex; align-items:center; flex:0 0 auto; }
+.gallery-toolbar-btns #btnRefreshGallery { margin-left:8px; }
+.gallery-grid { display:flex; flex-direction:row; flex-wrap:wrap; align-items:flex-start; gap:14px; width:100%; min-height:80px; }
+.gallery-card { display:flex; flex:0 0 calc(50% - 7px); width:calc(50% - 7px); min-width:0; max-width:calc(50% - 7px); flex-direction:column; overflow:hidden; border:1px solid var(--border); border-radius:14px; background:var(--panel); box-sizing:border-box; }
+/* 方形预览区。真实高度由 squareGalleryThumbs() 按卡片宽度写入（正方形），
+   这里给一个兜底高度，避免 JS 未执行时塌成 0。
+   注意不要用 <button>：UXP 会给原生按钮画上自带的边框和圆角，
+   `.gallery-card button { border:0 }` 压不住，实测整个预览区被渲染成一个大椭圆。
+   也不要用 object-fit：UXP 对 img 的 object-fit 支持不稳定，
+   缩略图的实际像素尺寸由 fitThumbInside() 按原始比例算好后写死。 */
+.gallery-card-thumb {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 172px;
+    overflow: hidden;
+    background: #07111f;
+    cursor: pointer;
+    box-sizing: border-box;
+}
+.gallery-card-thumb img { display: block; }
+.gallery-card-thumb.is-busy { pointer-events: none; opacity: .6; }
+.gallery-card-thumb.gallery-preview-error {
+    padding: 8px;
+    color: var(--text-soft);
+    font-size: 11px;
+    text-align: center;
+}
+.gallery-card-body { padding:9px; display:flex; flex-direction:column; gap:5px; }
+.gallery-card-title { font-weight:800; color:var(--text-main); }
+.gallery-card-meta { font-size:11px; line-height:1.4; color:var(--text-soft); word-break:break-word; }
+.gallery-card-actions { display:flex; gap:8px; }
+.gallery-card-actions .btn { min-height:30px; height:30px; padding:4px 8px; }
+.gallery-lightbox { position:fixed; inset:0; z-index:7000; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(2,8,18,.86); }
+.gallery-lightbox-panel { display:flex; flex-direction:column; width:min(960px, 100%); max-height:calc(100vh - 36px); overflow:hidden; border:1px solid var(--border-strong); border-radius:16px; background:var(--bg-card); box-shadow:0 24px 70px rgba(0,0,0,.58); }
+.gallery-lightbox-panel > img { display:block; width:100%; min-height:0; max-height:calc(100vh - 124px); object-fit:contain; background:#050a14; }
+.gallery-lightbox-footer { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 12px; }
+.gallery-lightbox-info { min-width:0; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.gallery-lightbox-actions { display:flex; flex:0 0 auto; gap:8px; }
+.gallery-lightbox-actions .btn { min-height:34px; height:34px; }
+@media (min-width: 620px) {
+    .gallery-card { flex-basis:calc(33.333% - 10px); width:calc(33.333% - 10px); max-width:calc(33.333% - 10px); }
+}
+.about-copy { color:var(--text-soft); line-height:1.8; }
+.donation-grid { display:flex; flex-wrap:wrap; gap:14px; }
+.donation-grid figure { margin:0; padding:10px; border:1px solid var(--border); border-radius:16px; text-align:center; background:var(--panel-soft); }
+.donation-grid figure { flex:1 1 240px; min-width:0; }
+.donation-grid img { display:block !important; visibility:visible !important; width:100%; height:auto; max-height:420px; object-fit:contain; border-radius:10px; }
+.donation-grid figcaption { padding-top:8px; font-weight:800; }
+.app-editor-hero { min-height:0 !important; align-items:center !important; }
+.app-editor-hero > :first-child { flex:1 1 auto !important; }
+body:not(.theme-dark) .module-card,
+
+body:not(.theme-dark) .tt-stage-card,
+
+body:not(.theme-dark) .gallery-card{ background:#f7fbff; color:#162338; }
+body:not(.theme-dark) .app-main,
+body:not(.theme-dark) .workspace { background:#edf4fb; }
+body:not(.theme-dark) .app-header,
+body:not(.theme-dark) .app-sidebar { background:#f6faff; }
+body:not(.theme-dark) .module-hero,
+body:not(.theme-dark) .settings-group,
+body:not(.theme-dark) .engine-settings-card,
+body:not(.theme-dark) .task-card { background:#fff !important; color:#162338 !important; border-color:#cbd8e8 !important; }
+body:not(.theme-dark) .module-title,
+body:not(.theme-dark) .card-title,
+body:not(.theme-dark) .sidebar-label,
+body:not(.theme-dark) .w10-row-label { color:#162338 !important; }
+body:not(.theme-dark) .info-text,
+body:not(.theme-dark) .module-desc { color:#5c6f89 !important; }
+body:not(.theme-dark) input,
+body:not(.theme-dark) textarea,
+body:not(.theme-dark) .custom-select-trigger { background:#fff !important; color:#17243a !important; }
+.browser-upload-actions .btn { flex: 1 1 0; }
+.browser-file-input { display: none !important; }
+.runtime-browser #btnImg2ImgReadSelection,
+.runtime-browser #btnAddReferenceImage { display: none !important; }
+.runtime-browser #btnUploadReferenceImage { display: inline-flex !important; }
+#btnUploadReferenceImage { display: none; width: 100%; }
+
+/* H5 / 浏览器：所有选区入口直接作为上传入口，不再隐藏。 */
+.runtime-browser #btnImg2ImgReadSelection { display:inline-flex !important; width:auto !important; }
+.runtime-browser #btnAddReferenceImage { display:inline-flex !important; }
+    .runtime-browser #chatSelectionPreview { cursor:pointer; border-color:var(--accent) !important; }
+
+/* 生成中心紧凑布局：修复窄屏 flex-basis 变成巨大纵向空占位。 */
+.generation-center-toolbar { min-height:0 !important; height:auto !important; }
+.generation-center-toolbar > .form-group { min-height:0 !important; height:auto !important; }
+.generation-center-conversation { min-height:0 !important; }
+#chatHistory { height:auto !important; min-height:72px !important; max-height:280px !important; }
+.generation-center-context #chatSelectionPreview { min-height:72px !important; height:auto !important; }
+@media (max-width:560px) {
+    .generation-center-toolbar > .form-group { flex:0 0 auto !important; width:100% !important; }
+    .generation-center-toolbar > .checkbox-row,
+    .generation-center-toolbar > .btn { flex:0 0 auto !important; width:100% !important; }
+}
+
+#logs .logs-list-card { min-height: 0; }
+#logs .log-container {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    max-height: calc(100vh - 330px) !important;
+    min-height: 180px;
+    padding: 0 2px 0 0 !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+#logs .log-entry {
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 10px 11px !important;
+    overflow: hidden !important;
+}
+#logs .log-head {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+#logs .log-badge {
+    position: static !important;
+    flex: 0 0 auto;
+    margin: 0 !important;
+}
+#logs .log-meta {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 2px 6px;
+    height: auto !important;
+    margin: 0 !important;
+    white-space: normal !important;
+}
+#logs .log-body { display: none; }
+#logs .log-entry.expanded { padding: 10px 11px !important; overflow: visible !important; }
+#logs .log-entry.expanded .log-body { display: block; }
+#logs .log-entry.expanded .log-badge { margin: 0 !important; }
+
+/* UXP 不支持 CSS Grid，原先的 display:grid 导致「半合成独立生成参数」等
+   生成参数区整体不显示。改为 flex 两列。
+   写法对齐插件里已验证可用的 .tt-platform-2x2-grid：
+     - 用 width 百分比定列宽，不用 calc()（UXP 对 flex-basis 里的 calc 支持不稳）
+     - 用 margin 制造列间距，不用 gap（UXP 对 flex 容器的 gap 支持不稳）
+   每行两个：42% + 4% + 4% = 50%。 */
+.system-prompt-grid,
+.independent-generation-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    width: 100%;
+    box-sizing: border-box;
+}
+/* 直接命中子元素本身，不用 `> *`：UXP 对子选择器 + 通配符的组合不可靠，
+   实测宽度不生效（子项仍按 .form-group 的 width:100% 铺满，退化成单列）。
+   .independent-generation-cell 由 buildIndependentGenerationControls 生成。 */
+.independent-generation-cell,
+.system-prompt-grid .form-group {
+    width: 42% !important;
+    max-width: 42% !important;
+    min-width: 0;
+    box-sizing: border-box !important;
+    margin: 0 4% 8px 4% !important;
+}
+.system-prompt-grid textarea { min-height: 110px; resize: vertical; }
+.independent-generation-controls { margin-bottom: 10px; }
+.independent-generation-controls .form-group { margin: 0; min-width: 0; }
+.independent-generation-controls select { width: 100%; }
+
+@media (max-width: 600px) {
+    :root { --sidebar-w: 52px; }
+    .app-sidebar { width: 52px; min-width: 52px; }
+    .brand-subtitle{ display: none !important; }
+    .workspace { min-width: 0; }
+    /* 这里原本给 .tab-content 加了左右各 5px 内边距，已删除。
+       原因：.app-shell 上已经有 10px 内边距，这 5px 是重复的；
+       而面板只有 420px 宽，右侧的 5px 再加上滚动条那 16px 的固定槽位，
+       看上去就是「右边空了一大块」。
+       注意这个媒体查询在 UXP 面板上永远命中（面板宽 420 < 600），
+       所以这行曾经是常驻生效的。 */
+    .browser-upload-actions { flex-direction: column; align-items: stretch; }
+    #logs .logs-action-row { width: 100%; }
+    #logs .logs-action-row .btn { min-width: 0; }
+    #logs .log-container { max-height: calc(100vh - 300px) !important; }
+    /* 注意：这里原本把 .independent-generation-cell 也压成 100% 单列。
+       但 UXP 面板宽度只有 420px，600px 的断点永远命中，
+       结果两列布局在任何情况下都退化成单列。生成参数在窄面板下同样保持两列。 */
+    .system-prompt-grid .form-group {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 0 8px 0 !important;
+    }
+}
+
+</style>
+<link rel="stylesheet" href="src/styles/reference-tile-scope.css">
+<link rel="stylesheet" href="src/styles/reference-tile-adapter.css">
+</head>
+<body>
+    <div class="container">
+        <!-- 侧边栏：图标导航（保留 .tab 与 data-tab，JS 切换逻辑不变） -->
+        <aside class="app-sidebar">
+            <div class="sidebar-logo">幻</div>
+            <nav class="sidebar-nav">
+                <div class="tab active" data-tab="img2img" title="生成">
+                    <span class="sidebar-icon">▶</span>
+                    <span class="sidebar-label">生成</span>
+                </div>
+                <div class="tab" data-tab="apps" title="快速">
+                    <span class="sidebar-icon"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M9.4 1.4 3 9.1h4.1L6.6 14.6 13 6.9H8.9z"/></svg></span>
+                    <span class="sidebar-label">快速</span>
+                </div>
+                <div class="tab" data-tab="toolbox" title="工具箱">
+                    <span class="sidebar-icon">⚒</span>
+                    <span class="sidebar-label">工具箱</span>
+                </div>
+                <div class="tab" data-tab="runninghub" title="应用">
+                    <span class="sidebar-icon">◈</span>
+                    <span class="sidebar-label">应用</span>
+                </div>
+                <!-- 对话独立成组，放在「应用」下方。
+                     原先对话和运行中任务挤在「生成中心」同一页，两类操作互相干扰。 -->
+                <div class="sidebar-group">
+                    <div class="tab" data-tab="chat" title="对话">
+                        <span class="sidebar-icon"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M2.5 2.5h11A1.5 1.5 0 0 1 15 4v6a1.5 1.5 0 0 1-1.5 1.5H7.4l-4 2.9a.55.55 0 0 1-.9-.45V11.5A1.5 1.5 0 0 1 1 10V4a1.5 1.5 0 0 1 1.5-1.5z"/></svg></span>
+                        <span class="sidebar-label">对话</span>
+                    </div>
+                </div>
+                <div class="tab" data-tab="settings" title="设置">
+                    <span class="sidebar-icon">⚙</span>
+                    <span class="sidebar-label">设置</span>
+                </div>
+                <!-- 隐藏的批处理 tab（JS 依赖，不可删除） -->
+                <div class="tab" data-tab="batch" style="display: none;">批处理</div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="tab" data-tab="gallery" title="画廊">
+                    <span class="sidebar-icon">▦</span>
+                    <span class="sidebar-label">画廊</span>
+                </div>
+                <div class="tab" data-tab="generationCenter" title="生成中心">
+                    <span class="sidebar-icon"><svg viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path fill="currentColor" d="M8 1.8 2 4.9l6 3.1 6-3.1zM2.6 7.3 1.4 7.9l6.6 3.4 6.6-3.4-1.2-.6-5.4 2.8z"/></svg></span>
+                    <span class="sidebar-label">中心</span>
+                </div>
+                <div class="tab" data-tab="logs" title="记录">
+                    <span class="sidebar-icon">≡</span>
+                    <span class="sidebar-label">记录</span>
+                </div>
+                <div class="tab" data-tab="about" title="关于">
+                    <span class="sidebar-icon">ⓘ</span>
+                    <span class="sidebar-label">关于</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容区 -->
+        <div class="app-main">
+            <header class="app-header">
+                <div class="brand">
+                    <div class="brand-copy">
+                        <div class="brand-title-row">
+                            <div class="section-title">Dream-AI</div>
+                            <span class="brand-cross">×</span>
+                            <span class="brand-edition">3.1.1</span>
+                        </div>
+                        <div class="brand-subtitle">PHOTOSHOP CREATIVE PANEL</div>
+                    </div>
+                </div>
+                <div class="app-header-actions">
+                    <div id="status" class="status">就绪</div>
+                    <button id="btnToggleTheme" class="icon-action-btn theme-toggle-btn" type="button" title="切换亮色/暗色主题" aria-label="切换主题">☾</button>
+                    <button id="btnRefreshUi" class="icon-action-btn" type="button" title="刷新界面">↻</button>
+                </div>
+            </header>
+
+            <div class="app-shell section">
+                <!-- Splash（默认隐藏，保留结构与 ID 给 JS） -->
+                <div id="splashScreen" class="splash-screen">
+                    <div class="module-hero splash-hero">
+                        <div>
+                            <div class="module-title">幻梦AI 修图插件</div>
+                            <div class="module-desc">AI retouch workspace for Photoshop</div>
+                        </div>
+                        <div class="module-badge">3.1.1</div>
+                    </div>
+                    <button id="btnCloseSplash" class="btn btn-primary splash-close-btn" type="button">进入插件</button>
+                    <div class="module-card splash-meta-card">
+                        <div class="card-title">插件信息</div>
+                        <div class="splash-meta-grid">
+                            <div class="splash-meta-item"><span>插件名</span><strong>幻梦AI 修图插件</strong></div>
+                            <div class="splash-meta-item"><span>版本号</span><strong>3.1.1 正式版</strong></div>
+                            <div class="splash-meta-item"><span>作者</span><strong>庄泽 / 零柒zero</strong></div>
+                            <div class="splash-meta-item"><span>项目主页</span><strong>https://www.syyyy.online</strong></div>
+                            <div class="splash-meta-item"><span>交流群</span><strong>1103212650</strong></div>
+                        </div>
+                    </div>
+                    <div class="module-card">
+                        <div class="card-title">公告</div>
+                        <div id="homeAnnouncements" class="notice-block"><div class="info-text">正在读取公告...</div></div>
+                    </div>
+                    <div class="module-card">
+                        <div class="card-title">更新检查</div>
+                        <div id="homeUpdateInfo" class="info-text">正在检查更新...</div>
+                    </div>
+                    <div class="module-card">
+                        <div class="card-title">作者与致谢</div>
+                        <div class="notice-block">
+                            <div class="notice-section compact-credit"><strong>作者</strong>庄泽 / 零柒zero</div>
+                            <div class="notice-section compact-credit"><strong>致谢</strong>图像对齐算法参考：草鱼<br>RunningHub 应用接入与工具箱交互衍生自 小T（PixelRunner / 小T修图助手），Apache-2.0，详见 NOTICE 文件</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workspace：所有 tab-content（保留原始结构与所有 ID/data-*） -->
+                <div class="workspace">
+                    <div id="img2img" class="tab-content active">
+                        <div class="tt-stage-card">
+                            <div id="selectionPreview" class="preview-container">
+                                <div id="previewPlaceholder" class="placeholder-text empty-state">当前 Photoshop 选区预览</div>
+                                <img id="previewImage" src="" alt="预览" class="selection-preview-img" style="display: none;">
+                            </div>
+                            <div id="selectionInfo" class="tt-selection-info">尚未读取选区</div>
+                        </div>
+                        <div id="browserUploadActions" class="browser-upload-actions">
+                            <button id="btnUploadPrimaryImage" class="btn btn-secondary" type="button">从手机 / 电脑上传主图</button>
+                            <span class="info-text">HTML / H5 模式可用</span>
+                            <input id="browserPrimaryImageInput" class="browser-file-input" type="file" accept="image/*">
+                        </div>
+
+                        <div class="tt-align-toolbar">
+                            <button type="button" class="tt-align-btn" data-align-mode="normal">无</button>
+                            <button type="button" class="tt-align-btn active" data-align-mode="fit-layer">标准对齐</button>
+                            <button type="button" class="tt-align-btn" data-align-mode="smart">完美对齐</button>
+                            <button id="btnAddToBatch" class="tt-tool-btn" type="button">批处理</button>
+                        </div>
+
+                        <div class="tt-render-row">
+                            <button id="btnImg2Img" class="btn btn-primary">▶ 渲染</button>
+                            <select id="imageCount" title="生成数量">
+                                <option value="1">1</option>
+                                <option value="2">2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+
+                        <div class="module-card tt-prompt-card">
+                            <div class="tt-section-head">
+                                <div class="card-title">提示词 <span class="tt-pro-chip">幻梦</span></div>
+                                <div class="tt-preset-inline">
+                                    <select id="presetCategory"><option value="">-分组-</option></select>
+                                    <select id="promptPreset"><option value="">-预设-</option></select>
+                                </div>
+                            </div>
+                            <div id="standardPromptPresetFields" class="standard-prompt-preset-fields">
+                                <textarea id="imgPrompt" class="prompt-textarea" wrap="soft" placeholder="在此输入提示词，如：基于原图风格，将模糊的细节转为清晰商业质感..."></textarea>
+                                <div class="tt-editor-footer">
+                                    <div class="tt-editor-tools">
+                                        <button id="btnImg2ImgReadSelection" class="tt-icon-btn" type="button" title="读取选区">▣</button>
+                                        <button id="btnClearPromptTt" class="tt-icon-btn" type="button" title="清空提示词">⌫</button>
+                                    </div>
+                                    <span id="imgPromptCharCount">0 / 5000 字</span>
+                                </div>
+                                <div class="tt-preset-save-row">
+                                    <input type="text" id="presetName" placeholder="预设名称" style="user-select:text;pointer-events:auto;">
+                                    <button id="btnSavePreset" class="btn btn-secondary">保存</button>
+                                    <button id="btnDeletePreset" class="btn btn-secondary">删除</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="module-card tt-image-input-card is-collapsed">
+                            <div class="tt-section-head">
+                                <div class="card-title">图像输入</div>
+                                <button id="btnToggleImageInput" class="tt-collapse-btn" type="button" aria-expanded="false">参考图 · 已收起</button>
+                            </div>
+                            <div id="imageInputBody" class="tt-collapsible-body">
+                                <div class="reference-panel">
+                                    <div class="reference-panel-head">
+                                        <div class="info-text">选取参考图</div>
+                                        <div class="reference-count"><span id="referenceImageCount">0</span>/4</div>
+                                    </div>
+                                    <div id="referenceImageSlots" class="reference-image-slots">
+                                        <div class="reference-slot empty">+</div>
+                                        <div class="reference-slot empty">+</div>
+                                        <div class="reference-slot empty">+</div>
+                                        <div class="reference-slot empty">+</div>
+                                    </div>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="btnAddReferenceImage" class="btn btn-secondary">+ 添加当前选区为参考图</button>
+                                    <button id="btnUploadReferenceImage" class="btn btn-secondary" type="button">+ 从手机 / 电脑上传参考图</button>
+                                    <input id="browserReferenceImageInput" class="browser-file-input" type="file" accept="image/*" multiple>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="module-card tt-platform-card">
+                            <div class="tt-section-head">
+                                <div class="card-title">平台与模型</div>
+                                <div id="imageProviderName" class="tt-balance-label">Photoshop 原生</div>
+                            </div>
+                            <div class="tt-platform-2x2-grid">
+                                <div class="tt-platform-cell">
+                                    <label for="imgProvider">平台 / 渠道</label>
+                                    <select id="imgProvider">
+                                        <option value="photoshop">Photoshop 原生</option>
+                                        <option value="grs">GRS 云端</option>
+                                        <option value="grok2api">grok2api</option>
+                                        <option value="sub2api">Sub2API</option>
+                                        <option value="xai">xAI 官方</option>
+                                        <option value="firefly">Firefly</option>
+                                    </select>
+                                </div>
+                                <div class="tt-platform-cell">
+                                    <label for="imgModel">模型</label>
+                                    <select id="imgModel">
+                                        <option value="PS_NATIVE_NANO_BANANA">PS 原生 Banana Pro (Photoshop 官方)</option>
+                                        <option value="nano-banana-pro">gemini-3-pro-image-preview · ¥0.09/次</option>
+                                        <option value="nano-banana-fast">nano-banana-fast (GRS Nano Banana)</option>
+                                        <option value="gpt-image-2">gpt-image-2 · ¥0.03/次</option>
+                                        <option value="gpt-image-2-vip">GPT Image 2 (1K/2K/4K) · ¥0.10/次</option>
+                                        <option value="gpt-image-2.5">gpt-image-2.5 · ¥0.03/次</option>
+                                        <option value="gpt-image-2.5-flare">gpt-image-2.5-flare · ¥0.10/次</option>
+                                        <option value="gpt-image-2.5-sunburst">gpt-image-2.5-sunburst · ¥0.12/次</option>
+                                        <option value="grok2api/grok-imagine-image-2.0">Grok Imagine 2.0 (grok2api)</option>
+                                        <option value="grok2api/grok-imagine-image-lite">Grok Imagine Lite (grok2api)</option>
+                                        <option value="xai/grok-imagine-image-quality">Grok Imagine Quality (xAI)</option>
+                                        <option value="xai/grok-imagine-image">Grok Imagine (xAI)</option>
+                                        <option value="firefly/google:firefly:colligo:gemini-flash">Gemini 3 Nano Banana Pro (Firefly)</option>
+                                    </select>
+                                </div>
+                                <div class="tt-platform-cell">
+                                    <label for="imgResolution">画质</label>
+                                    <select id="imgResolution">
+                                        <option value="auto" selected>自适应</option>
+                                        <option value="1K">1K</option>
+                                        <option value="2K">2K</option>
+                                        <option value="4K">4K</option>
+                                    </select>
+                                </div>
+                                <div class="tt-platform-cell">
+                                    <label>比例</label>
+                                    <div class="tt-ratio-display">按选区自适应</div>
+                                </div>
+                            </div>
+                            <div id="imageProviderSummary" class="provider-summary" data-provider="photoshop">
+                                <div class="provider-summary-badge">PROVIDER</div>
+                                <div class="provider-summary-copy">
+                                    <div id="imageProviderDetail" class="provider-summary-detail">不需要 API Key，直接使用 Photoshop 生成式填充。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="img2imgTutorial" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">生图使用教程</div>
+                                <div class="module-desc">把常用步骤单独放在这里，需要时再看，不打断正常生图。</div>
+                            </div>
+                            <div class="module-badge">GUIDE</div>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="btn-row">
+                                <button id="btnBackToImg2ImgWorkspace" class="btn btn-primary" type="button">返回工作台</button>
+                            </div>
+                        </div>
+
+                        <div class="module-card settings-help-card">
+                            <div class="card-title">快速开始</div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">第一次使用前</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">1. 先在设置里配置你要使用的 GRS、xAI 或 Firefly 服务。</div>
+                                    <div class="info-text">2. 保存设置后再回到生图工作台。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">正常生图 4 步</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">1. 在 Photoshop 中框选需要处理的区域。</div>
+                                    <div class="info-text">2. 回到插件点击「读取选区」。</div>
+                                    <div class="info-text">3. 选择模型、分辨率、数量并填写提示词。</div>
+                                    <div class="info-text">4. 点击「生成图像」，结果会自动回写到当前文档。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">参考图与预设</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">参考图最多 4 张，会和主选区一起发送。</div>
+                                    <div class="info-text">选择预设后会自动填入提示词；保存预设时会连同参考图一起保存。</div>
+                                    <div class="info-text">如果要做更复杂的特效提示词，可进入 VFX 应用中心继续编辑。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">常见问题</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">读取选区失败：确认当前文档已打开，并且真的有选区。</div>
+                                    <div class="info-text">生图失败：先检查 GRS API 密钥和网络连接。</div>
+                                    <div class="info-text">回图大小不理想：可在设置里调整图片对齐算法。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="toolbox" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">工具箱</div>
+                                <div class="module-desc">Photoshop 原生修图动作，基于当前文档和活动图层直接执行。</div>
+                            </div>
+                            <div class="module-badge">15 TOOLS</div>
+                        </div>
+
+                        <div id="toolboxMobileRouteControls"></div>
+
+                        <div class="tt-section-title">特效与分析</div>
+                        <div class="tt-toolb-tools">
+                            <div class="tt-toolb-tool">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">辉光</span><span class="tt-toolb-tag">图层特效</span></div>
+                                <div class="tt-toolb-desc">屏幕混合 + 高斯模糊，生成可继续编辑的高光辉光层。</div>
+                                <button id="btnToolGlowEditor" class="btn btn-primary" type="button">打开辉光面板</button>
+                            </div>
+                            <div class="tt-toolb-tool">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">空间特效</span><span class="tt-toolb-tag">VFX</span></div>
+                                <div class="tt-toolb-desc">粒子类型、逸散、折射、噪波、动态模糊、菲涅尔和重力。</div>
+                                <button id="btnToolSpaceFx" class="btn btn-primary" type="button">打开新版 VFX</button>
+                            </div>
+                            <div class="tt-toolb-tool">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">示波器</span><span class="tt-toolb-tag">RGB / 亮度</span></div>
+                                <div class="tt-toolb-desc">查看 RGB 直方图、亮度波形与通道分布，支持手动/自动刷新。</div>
+                                <button id="btnToolScope" class="btn btn-primary" type="button">打开示波器</button>
+                            </div>
+                            <div class="tt-toolb-tool">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">灯光修改</span><span class="tt-toolb-tag">2D 灯光</span></div>
+                                <div class="tt-toolb-desc">实时预览定位灯光，调整颜色、方向、强度和范围后生成回图。</div>
+                                <button id="btnToolLight" class="btn btn-primary" type="button">打开灯光面板</button>
+                            </div>
+                            <div class="tt-toolb-tool">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">融合校色</span><span class="tt-toolb-tag">强融合</span></div>
+                                <div class="tt-toolb-desc">用 AI 回图图层匹配下方原画面，保留细节并替换低频色彩。</div>
+                                <div class="tt-toolb-control">
+                                    <label>方法
+                                        <select id="toolColorMatchMethod">
+                                            <option value="wavelet">精准校色（小波低频）</option>
+                                            <option value="reinhard">整体校色（Lab）</option>
+                                        </select>
+                                    </label>
+                                    <button id="btnToolColorMatch" class="btn btn-primary" type="button">融合校色</button>
+                                </div>
+                            </div>
+                            <div class="tt-toolb-tool is-disabled">
+                                <div class="tt-toolb-head"><span class="tt-toolb-name">本地超分</span><span class="tt-toolb-tag">macOS 不可用</span></div>
+                                <div class="tt-toolb-desc">像素起子仅提供 Windows Real-ESRGAN 引擎，macOS 无法直接执行。</div>
+                                <button class="btn btn-secondary" type="button" disabled>当前不可用</button>
+                            </div>
+                        </div>
+
+                        <div class="tt-toolb-dual">
+                            <div class="tt-toolb-dual-col">
+                                <div class="tt-section-title">图层辅助</div>
+                                <div class="tt-toolb-grids">
+                                    <div class="tt-toolb-grid">
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="observer"><strong>黑白观察层</strong><small>检查明暗与反差</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="neutral-gray"><strong>中性灰图层</strong><small>50% 灰 + 柔光</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="frequency"><strong>高低频</strong><small>纹理与色彩分层</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="stamp"><strong>盖印图层</strong><small>合并可见到新层</small></button>
+                                    </div>
+                                    <div class="tt-toolb-option">
+                                        <label for="ttToolFreqRadius">高低频半径</label>
+                                        <input id="ttToolFreqRadius" type="number" min="1" max="50" step="1" value="10">
+                                        <span>px</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tt-toolb-dual-col">
+                                <div class="tt-section-title">滤镜与修复</div>
+                                <div class="tt-toolb-grids">
+                                    <div class="tt-toolb-grid">
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="gaussian"><strong>高斯模糊</strong><small>打开原生参数面板</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="sharpen"><strong>智能锐化</strong><small>打开原生参数面板</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="high-pass"><strong>高反差保留</strong><small>打开原生参数面板</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="content-aware"><strong>内容识别填充</strong><small>需要有效选区</small></button>
+                                        <button class="tt-toolbox-item" type="button" data-ps-tool="select-mask"><strong>选择并遮住</strong><small>需要有效选区</small></button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tt-toolb-note">像素起子随包的本地超分只有 Windows <code>.exe/.vbs</code> 引擎；当前 macOS 环境需单独的 arm64 或通用签名服务，故未放置无法运行的按钮。</div>
+                    </div>
+
+                    <div id="toolEditor" class="tab-content">
+                        <div id="toolEditorContent"></div>
+                    </div>
+
+                    <div id="runninghub" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">应用</div>
+                                <div class="module-desc">集中显示已导入并启用的 RunningHub 应用。</div>
+                            </div>
+                            <div class="module-badge">RH</div>
+                        </div>
+                        <div id="runninghubHome" class="field-stack"></div>
+                    </div>
+
+                    <div id="apps" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">小应用</div>
+                                <div class="module-desc">选择应用进入参数配置界面。</div>
+                            </div>
+                        </div>
+
+                        <div id="appsHome" class="field-stack"></div>
+
+                        <div id="vfxAppEditor" class="vfx-app-shell" style="display:none;">
+                            <div class="module-hero vfx-workflow-hero">
+                                <div class="vfx-workflow-summary">
+                                    <div class="module-title">VFX 特效</div>
+                                    <div class="module-desc">参考图、轨迹、外观参数，直接生成。</div>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="btnBackToAppsHome" class="btn btn-secondary" type="button">返回小应用</button>
+                                </div>
+                            </div>
+
+                            <div class="module-card field-stack vfx-step-card vfx-reference-card">
+                                <div class="card-title">参考与轨迹</div>
+                                <div class="reference-panel">
+                                    <div class="reference-panel-head">
+                                        <div class="card-title" style="margin:0;">参考图镜像</div>
+                                        <div class="reference-count"><span id="vfxReferenceImageCount">0</span>/4</div>
+                                    </div>
+                                    <div id="vfxReferenceImageSlots" class="reference-image-slots">
+                                        <div class="reference-slot empty">图2</div>
+                                        <div class="reference-slot empty">图3</div>
+                                        <div class="reference-slot empty">图4</div>
+                                        <div class="reference-slot empty">图5</div>
+                                    </div>
+                                </div>
+                                <div class="btn-row vfx-step-actions">
+                                    <button id="btnAddReferenceImageVfx" class="btn btn-secondary">添加当前选区为参考图</button>
+                                </div>
+                                <div class="vfx-trajectory-layout">
+                                    <div class="form-group settings-card">
+                                        <label for="vfxMotionPathText">轨迹描述</label>
+                                        <input type="text" id="vfxMotionPathText" placeholder="例如：人物周围绕一圈后向右上方拉出" style="width:100%;">
+                                        <div class="vfx-note-strip">
+                                            <div class="vfx-note-pill">先写大方向：绕、穿、扫、拖尾</div>
+                                            <div class="vfx-note-pill">复杂运动再加轨迹图</div>
+                                        </div>
+                                    </div>
+                                    <div class="form-group settings-card vfx-trajectory-preview-card">
+                                        <label>轨迹参考图</label>
+                                        <div id="vfxTrajectorySlot" class="vfx-trajectory-slot">
+                                            <div class="reference-slot empty">点击下方按钮抓取轨迹图</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="btn-row vfx-trajectory-actions">
+                                    <button id="btnCreateVfxLayer" class="btn btn-secondary" type="button">创建轨迹引导层</button>
+                                    <button id="btnCaptureTrajectory" class="btn btn-secondary" type="button">读取轨迹图</button>
+                                    <button id="btnClearTrajectory" class="btn btn-secondary" type="button">清除轨迹图</button>
+                                </div>
+                            </div>
+
+                            <div class="module-card field-stack vfx-step-card vfx-compact-card">
+                                <div class="card-title">外观参数</div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxEffectPreset">特效类型</label>
+                                    <select id="vfxEffectPreset">
+                                        <option value="energy-trail">能量拖尾</option>
+                                        <option value="neon-outline">霓虹描边</option>
+                                        <option value="glitch-shards">故障碎片</option>
+                                        <option value="magic-circle">魔法阵</option>
+                                        <option value="light-ribbon">光带丝带</option>
+                                        <option value="custom">自定义</option>
+                                    </select>
+                                </div>
+                                <div class="form-group settings-card" id="vfxEffectCustomCell" style="display:none;">
+                                    <label for="vfxEffectCustomName">自定义特效名</label>
+                                    <input type="text" id="vfxEffectCustomName" placeholder="例如：能量丝带、等离子束、霓虹裂隙" style="width:100%;">
+                                    <div class="vfx-input-note">建议输入英文名称，生成时会直接使用你填写的内容。</div>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxMaterialPreset">材质质感</label>
+                                    <select id="vfxMaterialPreset">
+                                        <option value="plasma">等离子光感</option>
+                                        <option value="glassy">玻璃质光感</option>
+                                        <option value="electric-particles">电流粒子</option>
+                                        <option value="liquid-fire">液态火焰</option>
+                                        <option value="dusty-aura">尘雾光环</option>
+                                        <option value="custom">自定义</option>
+                                    </select>
+                                </div>
+                                <div class="form-group settings-card" id="vfxMaterialCustomCell" style="display:none;">
+                                    <label for="vfxMaterialCustomName">自定义材质名</label>
+                                    <input type="text" id="vfxMaterialCustomName" placeholder="例如：玻璃辉光、液态火焰、金属电弧" style="width:100%;">
+                                    <div class="vfx-input-note">建议输入英文材质描述，生成时会直接使用。</div>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxColorHex">特效主色</label>
+                                    <div class="vfx-pseudo-color-control">
+                                        <div class="vfx-color-picker-stack">
+                                            <div class="vfx-color-preview-row">
+                                                <div id="vfxColorPreview" class="vfx-color-preview-box" aria-hidden="true"></div>
+                                                <input type="text" id="vfxColorHex" class="vfx-color-text" value="#00f0ff" spellcheck="false" autocomplete="off">
+                                                <input type="color" id="vfxColor" class="vfx-hidden-native" value="#00f0ff" tabindex="-1" aria-hidden="true">
+                                            </div>
+                                            <div id="vfxHueRing" class="vfx-hue-strip" tabindex="0" role="slider" aria-label="选择 VFX 色相" aria-valuemin="0" aria-valuemax="360" aria-valuenow="186">
+                                                <span id="vfxHueThumb" class="vfx-hue-thumb"></span>
+                                            </div>
+                                            <div class="vfx-slider-meta"><span>饱和度</span><span id="vfxColorSaturationValue">82%</span></div>
+                                            <input type="range" id="vfxColorSaturation" class="vfx-hidden-native" min="0" max="100" step="1" value="82" tabindex="-1" aria-hidden="true">
+                                            <div class="vfx-pseudo-slider" data-slider-for="vfxColorSaturation" tabindex="0" role="slider" aria-label="调整 VFX 饱和度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="82">
+                                                <div class="vfx-pseudo-slider-track"></div>
+                                                <div class="vfx-pseudo-slider-fill"></div>
+                                                <div class="vfx-pseudo-slider-thumb"></div>
+                                            </div>
+                                            <div class="vfx-slider-meta"><span>明度</span><span id="vfxColorBrightnessValue">100%</span></div>
+                                            <input type="range" id="vfxColorBrightness" class="vfx-hidden-native" min="0" max="100" step="1" value="100" tabindex="-1" aria-hidden="true">
+                                            <div class="vfx-pseudo-slider" data-slider-for="vfxColorBrightness" tabindex="0" role="slider" aria-label="调整 VFX 明度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+                                                <div class="vfx-pseudo-slider-track"></div>
+                                                <div class="vfx-pseudo-slider-fill"></div>
+                                                <div class="vfx-pseudo-slider-thumb"></div>
+                                            </div>
+                                            <div class="info-text">拖动色相、饱和度、明度，或者直接输入 Hex 色值。</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxParticleText">粒子描述</label>
+                                    <input type="text" id="vfxParticleText" placeholder="例如：细碎火星向外飞散，尾部带发光颗粒" style="width:100%;">
+                                    <div class="vfx-input-note">可留空，生成时会自动补英文粒子细节。</div>
+                                </div>
+                                <div class="form-group settings-card vfx-pseudo-choice-card">
+                                    <label class="checkbox-row pseudo-checkbox-row"><input type="checkbox" id="vfxSmokeEnabled" class="vfx-hidden-native"> <span class="pseudo-choice-dot" aria-hidden="true"></span><span>启用烟雾效果</span></label>
+                                    <div class="vfx-input-note">烟雾适合加强体积感，但不建议一开始就开得太重。</div>
+                                </div>
+                                <div class="form-group settings-card" id="vfxSmokeTextCell" style="display:none;">
+                                    <label for="vfxSmokeText">烟雾描述</label>
+                                    <input type="text" id="vfxSmokeText" placeholder="例如：尾部薄雾、局部翻卷烟丝、边缘淡烟" style="width:100%;">
+                                    <div class="vfx-input-note">建议输入英文烟雾描述；如果留空，会自动补英文默认烟雾效果。</div>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label>颜色辅助</label>
+                                    <div class="btn-row vfx-step-actions">
+                                        <button id="btnPickPsForeground" class="btn btn-secondary" type="button">吸取画面主色</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="module-card field-stack vfx-step-card vfx-compact-card">
+                                <div class="card-title">生成与预设</div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxPresetCategory">预设分组</label>
+                                    <select id="vfxPresetCategory"><option value="">-- 选择分类 --</option></select>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label for="vfxPromptPreset">预设选择</label>
+                                    <select id="vfxPromptPreset"><option value="">-- 选择预设 --</option></select>
+                                </div>
+                                <div class="form-group settings-card">
+                                    <label>提示词预览</label>
+                                    <div id="vfxPromptPreview" class="info-text vfx-prompt-preview-text">提示词将在配置后显示在这里</div>
+                                </div>
+                                <div class="btn-row vfx-step-actions">
+                                    <button id="btnGenerateVfxApp" class="btn btn-primary">生成图像</button>
+                                    <button id="btnGoToImg2Img" class="btn btn-secondary" type="button">前往生图页面</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="appEditor" class="app-editor-shell" style="display:none;">
+                            <div class="module-hero app-editor-hero">
+                                <div>
+                                    <div class="module-title" id="appEditorTitle">应用</div>
+                                    <div class="module-desc" id="appEditorDesc"></div>
+                                </div>
+                                <div class="btn-row">
+                                    <button id="btnBackToGenericAppHome" class="btn btn-secondary" type="button">返回小应用</button>
+                                </div>
+                            </div>
+                            <div id="appEditorBody" class="app-editor-body"></div>
+                        </div>
+                    </div>
+
+                    <div id="vfxTutorial" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">VFX 使用教程</div>
+                                <div class="module-desc">把说明单独放在这里，工作界面只保留真正要操作的内容。</div>
+                            </div>
+                            <div class="module-badge">VFX GUIDE</div>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="btn-row">
+                                <button id="btnBackToVfxWorkspace" class="btn btn-primary" type="button">返回 VFX 工作台</button>
+                            </div>
+                        </div>
+
+                        <div class="module-card settings-help-card">
+                            <div class="card-title">VFX 完整使用教程</div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">1. VFX 是什么</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">VFX 是在原图主体不大改的前提下，给人物或物体外侧叠加“能量、霓虹、魔法、故障、光带”这一类视觉特效。</div>
+                                    <div class="info-text">它更像“给现有画面加电影级特效层”，不是重画人物，也不是把原图整体换风格。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">2. 为什么用 VFX</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">普通提示词容易把人物本身也一起改掉，VFX 工作台会把重点放在“保留主体 + 只增强特效”。</div>
+                                    <div class="info-text">这样更适合做人像海报、游戏感包装、动作拖尾、法阵、电流、光带、武器能量这些需要贴着主体走的效果。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">3. 标准操作流程</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">第一步：先在 Photoshop 框住主主体或要加特效的位置。</div>
+                                    <div class="info-text">第二步：如果有风格参考、材质参考、局部脸部参考，就把它们逐张加到参考图区。</div>
+                                    <div class="info-text">第三步：填写轨迹描述；如果运动路径复杂，再单独画一张轨迹图并读取进来。</div>
+                                    <div class="info-text">第四步：设置特效类型、材质、主色、饱和度、明度、粒子和烟雾。</div>
+                                    <div class="info-text">第五步：先点“生成 VFX 提示词”检查方向，再点“直接生成 VFX”出图。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">4. 当前界面每一块怎么用</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">参考与轨迹：上半部分是参考图镜像，用来给 AI 补风格、材质、局部细节；轨迹区用来描述或读取运动方向。</div>
+                                    <div class="info-text">外观参数：特效类型决定大类，材质质感决定发光观感，主色/饱和度/明度控制颜色气质，粒子和烟雾负责丰富层次。</div>
+                                    <div class="info-text">生成与预设：可以把一整套 VFX 配置保存下来，下次直接从伪下拉里选回同款效果。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">5. 颜色怎么调</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">色相决定颜色类别，比如蓝、青、紫、红。</div>
+                                    <div class="info-text">饱和度越高，颜色越“炸”、越纯；越低越偏克制、偏灰、偏高级。</div>
+                                    <div class="info-text">明度越高，特效越亮更通透；越低越压暗，更适合夜景、故障感和能量残影。</div>
+                                    <div class="info-text">建议先吸取画面主色，再用饱和度和明度做微调，会比直接乱选颜色更自然。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">6. 什么时候要用轨迹图</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">如果只是“绕一圈”“向上拉出”“从手里爆开”，文字轨迹通常就够了。</div>
+                                    <div class="info-text">如果你要的是复杂弧线、穿插、回旋、折返、包裹身体多个部位，建议先创建轨迹引导层，自己画一条红色轨迹，再读取轨迹图。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">7. 常见搭配建议</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">能量拖尾 + 等离子光感：适合动作人物、运动瞬间、冲刺感。</div>
+                                    <div class="info-text">霓虹描边 + 玻璃质光感：适合潮流海报、科技边缘光。</div>
+                                    <div class="info-text">故障碎片 + 电流粒子：适合赛博、电子屏破裂、数码干扰感。</div>
+                                    <div class="info-text">魔法阵 + 尘雾光环：适合法术、召唤、悬浮类画面。</div>
+                                </div>
+                            </div>
+                            <div class="settings-group">
+                                <button class="settings-group-toggle" type="button" aria-expanded="true">8. 避坑提示</button>
+                                <div class="settings-group-body">
+                                    <div class="info-text">一开始不要把烟雾开太重，不然主体边缘容易脏。</div>
+                                    <div class="info-text">颜色太亮又太饱和时，特效会显得假，尤其在人像脸部附近。</div>
+                                    <div class="info-text">如果主体被改坏，通常是参考不够明确，或者轨迹/粒子写得太夸张，可以先收敛再生成一次。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="chat" class="tab-content generation-center-page">
+                        <div class="module-hero generation-center-hero">
+                            <div>
+                                <div class="module-title">对话</div>
+                                <div class="module-desc">与模型对话、结合选区作为图片上下文，结果可一键发送到生图。</div>
+                            </div>
+                            <div class="module-badge">CHAT</div>
+                        </div>
+                        <div class="module-card field-stack generation-center-toolbar">
+                            <div class="form-group">
+                                <label for="chatModel">对话模型</label>
+                                <select id="chatModel">
+                                    <option value="grs/gpt-5.4">gpt-5.4 (GRS)</option>
+                                    <option value="grs/gpt-5.5">gpt-5.5 (GRS)</option>
+                                    <option value="grs/gemini-3-pro">gemini-3-pro (GRS)</option>
+                                    <option value="grs/gemini-3.1-pro" selected>gemini-3.1-pro (GRS)</option>
+                                    <option value="grs/gemini-2.5-pro">gemini-2.5-pro (GRS)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="module-card field-stack generation-center-conversation">
+                            <div class="card-title">对话式生成</div>
+                            <div id="chatHistory"><div class="info-text empty-state">暂无聊天记录</div></div>
+                        </div>
+                        <div class="module-card field-stack generation-center-composer">
+                            <div class="form-group">
+                                <label for="chatPrompt">输入内容</label>
+                                <textarea id="chatPrompt" class="prompt-textarea" wrap="soft" placeholder="请输入问题，Enter 发送，Shift+Enter 换行，Tab 恢复上次输入..."></textarea>
+                                <div class="info-text chat-input-hint">Enter 发送，Shift+Enter 换行，Tab 恢复上次输入</div>
+                            </div>
+                            <div class="btn-row chat-action-row">
+                                <button id="btnChat" class="btn btn-primary">发送消息</button>
+                                <button id="btnChatReadSelection" class="btn btn-secondary">读取选区</button>
+                                <button id="btnChatSendToImg2Img" class="btn btn-secondary">发送到生图</button>
+                            </div>
+                        </div>
+                        <div class="module-card field-stack generation-center-context">
+                            <div class="card-title">图片上下文</div>
+                            <div id="chatSelectionInfo" class="info-text">可选：读取选区后让模型结合图片上下文回答</div>
+                            <div id="chatSelectionPreview" class="preview-container">
+                                <div id="chatPreviewPlaceholder" class="placeholder-text empty-state">预览将显示在这里</div>
+                                <img id="chatPreviewImage" src="" alt="聊天预览" class="selection-preview-img" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="generationCenter" class="tab-content generation-center-page">
+                        <div class="module-hero generation-center-hero">
+                            <div>
+                                <div class="module-title">生成中心</div>
+                                <div class="module-desc">运行中的生成任务、进度与 Photoshop 回传。</div>
+                            </div>
+                            <div class="module-badge" id="taskRunningBadge">0 RUNNING</div>
+                        </div>
+                        <div class="module-card field-stack generation-center-toolbar">
+                            <label class="checkbox-row"><input id="taskAutoReturn" type="checkbox" checked> 生成完成后自动回传 Photoshop</label>
+                            <button id="btnClearFinishedTasks" class="btn btn-secondary" type="button">清理已完成</button>
+                        </div>
+                        <div class="module-card field-stack generation-center-tasks">
+                            <div class="card-title">运行中任务</div>
+                            <div id="taskCenterList" class="task-center-list"><div class="info-text empty-state">暂无任务</div></div>
+                        </div>
+                    </div>
+
+                    <div id="batch" class="tab-content">
+                        <div class="module-hero"><div><div class="module-title">批处理</div><div class="module-desc">管理待处理的选区生成任务。</div></div><div class="module-badge">BATCH</div></div>
+                        <div class="module-card"><div class="btn-row"><button id="btnStartBatch" class="btn btn-primary">开始批处理</button><button id="btnClearBatch" class="btn btn-secondary">清空批处理</button></div></div>
+                        <div class="module-card field-stack"><div class="card-title">任务列表</div><div id="batchTaskList"><div class="info-text empty-state">暂无批处理任务</div></div></div>
+                    </div>
+
+                    <div id="settings" class="tab-content settings-redesigned">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">设置</div>
+                                <div class="module-desc">必要配置和应用导入都在这里。</div>
+                            </div>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="grs">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">1. GRS 云端生成</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label for="grsRegion">GRS 线路</label>
+                                        <select id="grsRegion">
+                                            <option value="overseas">海外站 · grsaiapi.com</option>
+                                            <option value="domestic">国内直连 · grsai.dakka.com.cn</option>
+                                        </select>
+                                        <div class="info-text">切换后所有 GRS 图像与对话请求统一使用该线路。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="imgApiKey">GRS API 密钥</label>
+                                        <input type="password" id="imgApiKey" placeholder="请输入 GRS API 密钥">
+                                        <div class="info-text">用于 Nano Banana、gpt-image-2 和 GRS 对话模型。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label>GRS 积分余额</label>
+                                        <div class="settings-actions"><button id="btnCheckGrsCredits" class="btn btn-secondary" type="button">查询积分余额</button></div>
+                                        <div id="grsCreditsInfo" class="info-text">未查询</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="volcengine">
+                                <button type="button" class="settings-group-toggle" aria-expanded="false">6. 火山引擎 · 方舟</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="volcengineApiUrl">方舟 API 地址</label>
+                                        <input type="text" id="volcengineApiUrl" value="https://ark.cn-beijing.volces.com/api/v3" placeholder="https://ark.cn-beijing.volces.com/api/v3">
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="volcengineApiKey">方舟 API Key</label>
+                                        <input type="password" id="volcengineApiKey" placeholder="填写火山方舟 API Key">
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="volcengineImageModel">图像模型 / 推理接入点 ID</label>
+                                        <input type="text" id="volcengineImageModel" value="doubao-seedream-4-0-250828" placeholder="doubao-seedream-4-0-250828">
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="volcengineChatModel">文字模型 / 推理接入点 ID</label>
+                                        <input type="text" id="volcengineChatModel" value="doubao-seed-1-6-250615" placeholder="doubao-seed-1-6-250615">
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="gallery">
+                                <button type="button" class="settings-group-toggle" aria-expanded="false">11. 画廊自动保存</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="galleryRetentionMode">自动清理方式</label>
+                                        <select id="galleryRetentionMode"><option value="count">按数量</option><option value="days">按时间</option><option value="both">数量与时间同时限制</option></select>
+                                    </div>
+                                    <div class="form-group settings-card"><label for="galleryMaxCount">最多保留数量</label><input id="galleryMaxCount" type="number" min="1" max="500" value="30"></div>
+                                    <div class="form-group settings-card"><label for="galleryMaxDays">最多保留天数</label><input id="galleryMaxDays" type="number" min="1" max="3650" value="30"></div>
+                                    <div class="form-group settings-card"><button id="btnPruneGallery" type="button" class="btn btn-secondary">立即按规则清理</button><div id="galleryPruneStatus" class="info-text">生成结果会自动保存。</div></div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="grok2api">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">2. Grok Imagine · grok2api（推荐）</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="grok2apiApiUrl">grok2api 服务地址</label>
+                                        <input type="text" id="grok2apiApiUrl" value="http://127.0.0.1:8000" placeholder="http://127.0.0.1:8000">
+                                        <div class="info-text">当前项目默认端口为 8000。可填写根地址或带 /v1 的地址，插件会自动规范化。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="grok2apiApiKey">grok2api Client Key</label>
+                                        <input type="password" id="grok2apiApiKey" placeholder="g2a_...">
+                                        <div class="info-text">必须在 grok2api 后台「Client Keys」页面创建。不要填写管理员密码，也不要填写 xAI 官方 Key。</div>
+                                        <div class="settings-actions"><button id="btnCheckGrok2Api" class="btn btn-secondary" type="button">检查连接 / 读取模型</button></div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="xai">
+                                <button type="button" class="settings-group-toggle" aria-expanded="false">3. Grok Imagine · xAI 官方</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="xaiApiKey">xAI API Key</label>
+                                        <input type="password" id="xaiApiKey" placeholder="xai-...">
+                                        <div class="info-text">用于 Grok Imagine 文生图和图像编辑；选区与参考图会自动作为 edits 输入。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="xaiApiUrl">xAI API 地址</label>
+                                        <input type="text" id="xaiApiUrl" value="https://api.x.ai" placeholder="https://api.x.ai">
+                                        <div class="info-text">仅在直接使用 xAI 官方 API 时配置；与 grok2api 的 g2a_... Client Key 不通用。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="sub2api">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">4. 图像模型 · Sub2API</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="sub2apiApiUrl">Sub2API 服务地址</label>
+                                        <input type="text" id="sub2apiApiUrl" value="http://127.0.0.1:8080" placeholder="http://127.0.0.1:8080">
+                                        <div class="info-text">官方默认端口为 8080；可填写根地址或带 /v1 的公开地址。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="sub2apiApiKey">Sub2API 用户 API Key</label>
+                                        <input type="password" id="sub2apiApiKey" placeholder="sk-...">
+                                        <div class="info-text">在 Sub2API 用户后台创建并绑定 Grok 分组；不是管理员密码，也不是上游 xAI Key。</div>
+                                        <div class="settings-actions"><button id="btnCheckSub2Api" class="btn btn-secondary" type="button">检查连接 / 读取模型</button></div>
+                                        <div id="sub2apiStatus" class="info-text">支持 Grok 文生图、图片编辑和异步图片任务。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="firefly">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">5. Firefly 逆向服务</button>
+                                <div class="settings-group-body provider-settings-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="fireflyApiUrl">Firefly 服务地址</label>
+                                        <input type="text" id="fireflyApiUrl" value="http://127.0.0.1:8787" placeholder="http://127.0.0.1:8787">
+                                        <div class="info-text">对应「Firefly逆向/firefly-image-api」默认地址；Docker 多账号版请填实际端口（常见为 8080）。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="fireflyApiKey">Firefly 业务 API Key（可选）</label>
+                                        <input type="password" id="fireflyApiKey" placeholder="APP_API_KEY / APP_API_KEYS">
+                                        <div class="info-text">如本地服务未配置鉴权可留空；公网或多账号服务建议必填。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="newapi">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">6. New API · 本地统一网关</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label for="newApiUrl">New API 地址</label>
+                                        <input type="text" id="newApiUrl" value="http://127.0.0.1:3000" placeholder="http://127.0.0.1:3000">
+                                        <div class="info-text">官方 Docker 默认端口为 3000；兼容 /v1/models、/v1/chat/completions、/v1/images/generations。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="newApiKey">NewAPI 密钥</label>
+                                        <input type="password" id="newApiKey" placeholder="请输入 NewAPI 密钥">
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="newApiImageMode">NewAPI 生图模式</label>
+                                        <select id="newApiImageMode" class="form-control">
+                                            <option value="auto">Auto：Images 优先，失败再 Chat</option>
+                                            <option value="images">Images API</option>
+                                            <option value="chat">Chat 多模态</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="newApiImageModel">New API 生图模型名称</label>
+                                        <input type="text" id="newApiImageModel" placeholder="例如：gpt-image-1 或你的渠道映射名">
+                                        <div class="info-text">保存后会作为独立的 New API 生图渠道出现在“平台 / 渠道”中。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label>模型列表</label>
+                                        <div class="settings-actions"><button id="btnAutoFetchNewApiModels" class="btn btn-secondary" type="button">抓取 NewAPI 模型</button></div>
+                                        <div class="settings-actions-tip">拉取后会填入对话模型列表，生图可选择 NewAPI 模型。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label>NewAPI 余额</label>
+                                        <div class="settings-actions"><button id="btnCheckNewApiCredits" class="btn btn-secondary" type="button">查询 NewAPI 余额</button></div>
+                                        <div id="newApiCreditsInfo" class="info-text">未查询</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="server">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">7. 公告与更新</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label>公告后台</label>
+                                        <div id="serverStatusInfo" class="info-text">公告固定从服务器后台读取：https://www.syyyy.online</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label>公告与更新</label>
+                                        <div class="settings-actions"><button id="btnRefreshAnnouncements" class="btn btn-secondary" type="button">刷新公告</button><button id="btnCheckUpdate" class="btn btn-secondary" type="button">检查更新</button></div>
+                                        <div id="serverUpdateInfo" class="info-text">未检查更新</div>
+                                        <div id="serverAnnouncements" class="notice-block"><div class="info-text">暂无公告</div></div>
+                                    </div>
+                                    <div class="form-group settings-card" id="promptSyncServerCard">
+                                        <label for="promptSyncBaseUrl">提示词同步服务器</label>
+                                        <input type="text" id="promptSyncBaseUrl" value="" placeholder="https://你的服务器地址">
+                                        <div class="settings-actions"><button id="btnSyncServerPresets" class="btn btn-secondary" type="button">从服务器同步提示词</button></div>
+                                        <div id="promptSyncStatus" class="info-text">服务器需提供 /api/presets/manifest 接口，留空则不启用。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="other">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">8. Photoshop 回写</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label for="alignmentMode">图片对齐算法</label>
+                                        <select id="alignmentMode" class="form-control">
+                                            <option value="normal">普通对齐</option>
+                                            <option value="fit-layer">缩放图层到选区</option>
+                                            <option value="smart">智能对齐</option>
+                                            <option value="force1x1">1:1 强制无偏移</option>
+                                        </select>
+                                        <div class="info-text">普通对齐不会改变画布大小；需要把回图缩放到选区时再选择缩放图层到选区。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="runninghub">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">9. RunningHub 应用</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label for="runninghubApiKey">RunningHub API Key</label>
+                                        <input type="password" id="runninghubApiKey" placeholder="请输入 RunningHub API Key">
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="runninghubAppIdInput">应用 ID / 应用链接</label>
+                                        <input type="text" id="runninghubAppIdInput" placeholder="输入 appId，或粘贴 RunningHub 应用链接">
+                                        <div class="info-text">支持直接输入 appId，也支持粘贴应用 URL 自动提取。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <div class="btn-row">
+                                            <button id="btnParseRunninghubApp" class="btn btn-secondary" type="button">解析应用</button>
+                                            <button id="btnSaveRunninghubParsedApp" class="btn btn-secondary" type="button" disabled>保存应用</button>
+                                        </div>
+                                        <div id="runninghubParsedAppInfo" class="info-text">未解析应用</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label>已导入应用</label>
+                                        <div id="runninghubAppList" class="field-stack">
+                                            <div class="info-text">暂无导入应用</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="system-prompts">
+                                <button type="button" class="settings-group-toggle" aria-expanded="false">11. 系统提示词</button>
+                                <div class="settings-group-body system-prompt-grid">
+                                    <div class="form-group settings-card">
+                                        <label for="textSystemPromptPositive">文字模型 · 正向系统提示词</label>
+                                        <textarea id="textSystemPromptPositive" rows="5" placeholder="规定文字模型应当遵循的角色、目标和输出方式"></textarea>
+                                        <div class="info-text">用于对话、分析、提示词生成等文字任务。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="textSystemPromptNegative">文字模型 · 逆向系统提示词</label>
+                                        <textarea id="textSystemPromptNegative" rows="5" placeholder="规定文字模型需要避免的回答方式和内容"></textarea>
+                                        <div class="info-text">作为必须避免的约束，与正向提示词一起发送。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="imageSystemPromptPositive">生图模型 · 正向系统提示词</label>
+                                        <textarea id="imageSystemPromptPositive" rows="5" placeholder="规定所有生图任务共同遵循的画面目标"></textarea>
+                                        <div class="info-text">自动加入主生成、快速应用和工具箱 AI 生图请求。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="imageSystemPromptNegative">生图模型 · 逆向系统提示词</label>
+                                        <textarea id="imageSystemPromptNegative" rows="5" placeholder="规定所有生图任务共同避免的画面问题"></textarea>
+                                        <div class="info-text">适合填写身份漂移、构图变化、水印和畸形等禁用项。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="advanced">
+                                <button type="button" class="settings-group-toggle" aria-expanded="true">12. 高级设置</button>
+                                <div class="settings-group-body">
+                                    <div class="form-group settings-card">
+                                        <label><input id="autoColorMatchEnabled" type="checkbox" disabled> 所有渠道回图自动校准颜色（当前停用）</label>
+                                        <div class="info-text">当前生成流程强制跳过自动校色，生成图会立即保存到画廊并回写；仍可在工具箱中手动使用融合校色。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="autoColorMatchMethod">自动校色方法</label>
+                                        <select id="autoColorMatchMethod">
+                                            <option value="wavelet">精准校色（小波低频，推荐）</option>
+                                            <option value="reinhard">整体校色（Lab 均值/标准差）</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="advancedPollInterval">轮询间隔（毫秒）</label>
+                                        <input type="number" id="advancedPollInterval" min="500" max="60000" step="500" placeholder="默认 3000">
+                                        <div class="info-text">用于 RunningHub 等异步任务轮询，数值越小刷新越频繁。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="advancedTimeout">请求超时（毫秒）</label>
+                                        <input type="number" id="advancedTimeout" min="5000" max="120000" step="1000" placeholder="默认 30000">
+                                        <div class="info-text">用于接口请求超时控制，适合网络较慢时适当调大。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="advancedMaxConcurrent">最大并发任务数</label>
+                                        <input type="number" id="advancedMaxConcurrent" min="1" max="5" step="1" placeholder="默认 1">
+                                        <div class="info-text">限制同一时间提交的后台任务数量，避免过载。</div>
+                                    </div>
+                                    <div class="form-group settings-card">
+                                        <label for="advancedAiOptimizeAppId">AI 优化应用 ID</label>
+                                        <input type="text" id="advancedAiOptimizeAppId" placeholder="留空使用内置默认值">
+                                        <div class="btn-row" style="margin-top:10px;">
+                                            <button id="btnResetAiOptimizeAppId" class="btn btn-secondary" type="button">恢复默认</button>
+                                            <button id="btnRefreshAccountSummary" class="btn btn-secondary" type="button">刷新账户状态</button>
+                                        </div>
+                                        <div id="accountSummaryInfo" class="info-text">点击刷新账户状态查看 RunningHub API 配置与本地应用数量。</div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="module-card settings-priority-card">
+                            <section class="settings-group" data-group="ring">
+                                <button type="button" class="settings-group-toggle" aria-expanded="false">15. 圆环按钮</button>
+                                <div class="settings-group-body">
+                                <div class="form-group settings-card">
+                                    <div class="info-text">给「幻梦圆环」的六个按钮指派功能。改完立刻生效，不用重启助手；名称留空就用默认名。</div>
+                                    <div class="info-text" style="margin-top:6px;">
+                                        <b>按钮 1 / 5</b>（默认「生成」「读选区」）可以自由指派。<br>
+                                        <b>按钮 2 / 3 / 4 / 6</b>（默认「参数」「预设」「对话」「关闭」）的子菜单由圆环助手本身展开，插件这边负责填内容 —— 把它们改成别的功能不会展开对应菜单。
+                                    </div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringChatQuestions">对话 · 快捷提问</label>
+                                    <textarea id="ringChatQuestions" class="prompt-textarea" wrap="soft" rows="6" placeholder="标题=提示词&#10;每行一条。只写提示词也可以，标题会自动取前几个字。&#10;留空则使用内置的六条。"></textarea>
+                                    <div class="info-text" style="margin-top:6px;">
+                                        圆环 →「对话 → 快捷提问」里会列出这些。点击后直接在圆环下方出答案，不用切到面板。
+                                    </div>
+                                    <div class="info-text" id="ringChatQuestionStatus"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_generate">按钮 1 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_generate" placeholder="默认：生成">
+                                    <label for="ringSlotAction_generate" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_generate"></select>
+                                    <div class="info-text" id="ringSlotHint_generate"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_params">按钮 2 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_params" placeholder="默认：参数">
+                                    <label for="ringSlotAction_params" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_params"></select>
+                                    <div class="info-text" id="ringSlotHint_params"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_presets">按钮 3 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_presets" placeholder="默认：预设">
+                                    <label for="ringSlotAction_presets" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_presets"></select>
+                                    <div class="info-text" id="ringSlotHint_presets"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_chat">按钮 4 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_chat" placeholder="默认：对话">
+                                    <label for="ringSlotAction_chat" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_chat"></select>
+                                    <div class="info-text" id="ringSlotHint_chat"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_readSelection">按钮 5 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_readSelection" placeholder="默认：读选区">
+                                    <label for="ringSlotAction_readSelection" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_readSelection"></select>
+                                    <div class="info-text" id="ringSlotHint_readSelection"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <label for="ringSlotLabel_close">按钮 6 · 名称</label>
+                                    <input type="text" id="ringSlotLabel_close" placeholder="默认：关闭">
+                                    <label for="ringSlotAction_close" style="margin-top:8px;">点击后执行</label>
+                                    <select id="ringSlotAction_close"></select>
+                                    <div class="info-text" id="ringSlotHint_close"></div>
+                                </div>
+
+                                <div class="form-group settings-card">
+                                    <div class="btn-row">
+                                        <button id="btnResetRingSlots" class="btn btn-secondary" type="button">恢复默认</button>
+                                        <button id="btnPushRingSlots" class="btn btn-secondary" type="button">立即同步到圆环</button>
+                                    </div>
+                                    <div class="info-text" id="ringSlotStatus">圆环助手没连上时，改动会在连上后自动生效。</div>
+                                </div>
+                                </div>
+                            </section>
+                        </div>
+
+                        <div class="form-group settings-save-wrap settings-save-standalone">
+                            <button id="btnSaveSettings" class="btn btn-success">保存全部设置</button>
+                        </div>
+
+                    </div>
+
+                    <div id="gallery" class="tab-content">
+                        <div class="module-hero"><div><div class="module-title">生成画廊</div><div class="module-desc">自动保存所有渠道输出；点击卡片可安全回放到生成时的原文档与原选区。</div></div><div class="module-badge">GALLERY</div></div>
+                        <div class="module-card gallery-toolbar"><div id="gallerySummary" class="info-text">正在读取画廊…</div><div class="gallery-toolbar-btns"><button id="btnClearGallery" class="btn btn-danger" type="button">清空</button><button id="btnRefreshGallery" class="btn btn-secondary" type="button">刷新</button></div></div>
+                        <div id="galleryGrid" class="gallery-grid"><div class="info-text empty-state">暂无生成图片</div></div>
+                    </div>
+
+                    <div id="about" class="tab-content">
+                        <div class="module-hero"><div><div class="module-title">关于 幻梦 AI</div><div class="module-desc">版本 3.1.1 · Photoshop、H5 与移动端创作面板。</div></div><div class="module-badge">ABOUT</div></div>
+                        <div class="module-card about-card"><div class="card-title">作者与致谢</div><div class="about-copy">作者：庄泽 / 零柒zero<br>图像对齐算法参考：草鱼<br>RunningHub 应用接入与工具箱交互：衍生自 PixelRunner / 小T修图助手（像素起子 V2.8.1），Copyright 2026 XIAOTsune，Apache License 2.0<br><br>本项目整体按 <strong>GPL-3.0</strong> 分发。第三方组件的版权与许可证归各自作者所有，完整署名见项目内的 <code>NOTICE</code>，许可证全文见 <code>LICENSE-Apache-2.0.txt</code>。<br>Adobe Photoshop UXP 及本项目实际引用的其它开源组件，版权与许可证归各自作者所有。</div></div>
+                        <div class="module-card"><div class="card-title">支持作者</div><div class="donation-grid"><figure><img src="assets/donation/wechat.png" alt="微信赞赏码"><figcaption>微信</figcaption></figure><figure><img src="assets/donation/alipay.png" alt="支付宝赞赏码"><figcaption>支付宝</figcaption></figure></div></div>
+                    </div>
+
+                    <div id="logs" class="tab-content">
+                        <div class="module-hero">
+                            <div>
+                                <div class="module-title">生成记录</div>
+                                <div class="module-desc">按时间查看生成结果、提示词和错误；可一键重新载入提示词。</div>
+                            </div>
+                            <div class="module-badge">RECORDS</div>
+                        </div>
+                        <div class="module-card logs-toolbar">
+                            <div class="form-group logs-search-group">
+                                <label for="logSearch">搜索日志</label>
+                                <input type="text" id="logSearch" placeholder="输入模型、提示词、状态或错误内容...">
+                            </div>
+                            <div class="btn-row logs-action-row">
+                                <button id="btnExportLogs" class="btn btn-secondary">导出日志</button>
+                                <button id="btnClearLogs" class="btn btn-secondary danger-action">清空日志</button>
+                            </div>
+                        </div>
+                        <div class="module-card logs-list-card">
+                            <div class="card-title">生成时间线</div>
+                            <div id="logContainer" class="log-container"><div class="info-text empty-state">暂无日志记录</div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+    <script src="src/theme.js"></script>
+    <script src="src/features/color-match/color-match.service.js"></script>
+    <script src="src/features/glow/glow-engine.js"></script>
+    <script src="src/features/space-fx/space-fx-engine.js"></script>
+    <script src="src/features/gallery/gallery-store.js"></script>
+    <script src="src/features/reference-ui/tile-hemisynth.prompts.js"></script>
+    <script src="src/features/ring-bridge/ring-bridge.js"></script>
+    <script src="src/app/index.js"></script>
+    <script src="src/sw-register.js"></script>
+</body>
+</html>

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>幻梦AI 3.1.1 使用教程</title>
+  <style>
+    :root { --bg:#080b10; --card:#151b26; --soft:#1a2230; --text:#eef4ff; --muted:rgba(238,244,255,.66); --accent:#4d9eff; --accent2:#7c5cff; --line:rgba(120,160,220,.18); --danger:#ff6b7a; --ok:#64d98a; }
+    * { box-sizing:border-box; }
+    body { margin:0; padding:24px; background:radial-gradient(circle at 20% 0%, rgba(77,158,255,.16), transparent 34%), var(--bg); color:var(--text); font-family:Arial, Helvetica, "PingFang SC", "Microsoft YaHei", sans-serif; line-height:1.75; }
+    .wrap { max-width:1080px; margin:0 auto; }
+    .hero,.card { border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg, rgba(26,34,48,.96), rgba(18,24,34,.96)); box-shadow:0 12px 36px rgba(0,0,0,.28); }
+    .hero { padding:30px; margin-bottom:18px; }
+    .card { padding:22px; margin:16px 0; }
+    h1,h2,h3 { margin:0 0 12px; line-height:1.25; }
+    h1 { font-size:34px; }
+    h2 { font-size:23px; border-left:4px solid var(--accent); padding-left:10px; }
+    h3 { font-size:18px; color:#cfe5ff; }
+    p { margin:8px 0; color:var(--muted); }
+    ol,ul { margin:8px 0 0; padding-left:24px; }
+    li { margin:8px 0; }
+    code { padding:2px 6px; border:1px solid var(--line); border-radius:7px; background:#090d13; color:#cfe5ff; }
+    .badge { display:inline-block; margin:6px 8px 0 0; padding:5px 10px; border:1px solid rgba(77,158,255,.32); border-radius:999px; color:#cfe5ff; background:rgba(77,158,255,.10); font-weight:800; }
+    .step { padding:14px; margin:10px 0; border:1px solid var(--line); border-radius:14px; background:rgba(9,13,19,.55); }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:12px; }
+    .ok { color:var(--ok); font-weight:800; }
+    .warn { color:var(--danger); font-weight:800; }
+    .toc a { display:inline-block; margin:4px 8px 4px 0; color:#cfe5ff; text-decoration:none; border:1px solid var(--line); border-radius:999px; padding:4px 10px; background:rgba(77,158,255,.08); }
+    .small { font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="hero">
+      <h1>幻梦AI 修图插件 3.1.1 使用教程</h1>
+      <p>小应用工作区集中了 VFX 特效、合成辅助器、特效迁移、AI超清和 RunningHub 应用，统一使用伪下拉框、普通图层混合模式与自然比例生成方案。</p>
+      <span class="badge">版本：3.1.1 正式版</span><span class="badge">Photoshop UXP</span><span class="badge">GRS / Nano Banana / RunningHub</span>
+    </div>
+
+    <div class="card toc">
+      <h2>目录</h2>
+      <a href="#install">安装</a><a href="#settings">设置</a><a href="#apps">新版应用界面</a><a href="#vfx">VFX 特效</a><a href="#composite">合成辅助器</a><a href="#effect">特效迁移</a><a href="#superres">AI超清</a><a href="#runninghub">RunningHub 应用</a><a href="#faq">常见问题</a>
+    </div>
+
+    <div id="install" class="card">
+      <h2>一、安装</h2>
+      <div class="grid">
+        <div class="step"><h3>直接安装</h3><ol><li>退出 Photoshop。</li><li>解压 <code>幻梦AI 3.1.1.zip</code>。</li><li>把整个 <code>幻梦AI 3.1.1</code> 文件夹复制到 Photoshop 的 <code>Plug-ins</code> 目录。</li><li>重新打开 Photoshop，在顶部菜单 <code>插件 / Plugins</code> 中打开 <code>幻梦AI 修图插件</code>。</li></ol></div>
+        <div class="step"><h3>UXP Developer Tool</h3><ol><li>打开 UXP Developer Tool。</li><li>点击 <code>Add Plugin</code>。</li><li>选择 <code>幻梦AI 3.1.1/manifest.json</code>。</li><li>点击 <code>Load</code> 或 <code>Reload</code>。</li></ol></div>
+      </div>
+      <p class="warn">不要只复制 index.html。必须保留整个目录结构：<code>manifest.json</code>、<code>index.html</code>、<code>src/</code>（入口 <code>src/app/index.js</code>）、<code>assets/</code>（预设 <code>assets/presets/yushe.json</code>）、<code>icons/</code>，以及 H5 版需要的 <code>sw.js</code> 与 <code>manifest.webmanifest</code>。</p>
+    </div>
+
+    <div id="settings" class="card">
+      <h2>二、第一次使用前设置 API</h2>
+      <ol><li>进入插件顶部 <code>设置</code>。</li><li>填写 GRS 生图 API 密钥和 GRS 对话 API 密钥。</li><li>如果使用 NewAPI，填写 NewAPI 地址与密钥。</li><li>RunningHub 应用需要填写 RunningHub API Key。</li><li>点击 <code>保存全部设置</code>。</li></ol>
+      <p class="ok">公告与更新检查默认读取服务器 <code>https://www.syyyy.online</code>。</p>
+    </div>
+
+    <div id="apps" class="card">
+      <h2>三、新版应用/小应用界面</h2>
+      <p>点击顶部 <code>应用</code> 进入小应用工作区。这里集中显示 VFX 特效、合成辅助器、特效迁移、AI超清和导入的 RunningHub 应用。</p>
+      <ul><li>所有主要下拉框已改为伪下拉框，避免 Photoshop UXP 原生 select 显示异常。</li><li>小应用生成结果默认使用正常混合模式，不再使用滤色。</li><li>所有图片生成默认不强制 1:1 或固定区域大小，按当前选区/源图自然比例生成。</li></ul>
+    </div>
+
+    <div id="vfx" class="card">
+      <h2>四、VFX 特效使用方案</h2>
+      <ol><li>在 Photoshop 中框选要作为主图的区域，进入插件读取选区。</li><li>进入 <code>应用 → VFX 特效</code>。</li><li>选择特效预设、材质预设、颜色、粒子、烟雾和运动轨迹描述。</li><li>可点击 <code>添加当前选区为参考图</code>，最多添加 4 张参考图。</li><li>如果需要方向/动势，读取一张轨迹图作为 VFX 轨迹参考。</li><li>点击生成按钮，插件会把 VFX 提示词写入生图区并调用当前生图模型。</li></ol>
+      <p class="ok">VFX 不再限制正方形比例，也不强制缩小到局部小区域；提示词会要求效果按画面需要自然扩展，同时保留主体和构图。</p>
+    </div>
+
+    <div id="composite" class="card">
+      <h2>五、合成辅助器使用方案</h2>
+      <p>合成辅助器用于从原图直接生成后期合成常用的辅助图，例如深度图、法线图、分割图、雾效遮罩、高光反射图、边缘线稿和亮度图。</p>
+      <ol><li>进入 <code>应用 → 合成辅助器</code>。</li><li>点击 <code>读取当前选区</code>，把当前 Photoshop 选区作为原图。</li><li>勾选需要输出的辅助类型，可多选。</li><li>选择文字/分析模型和生图模型；默认可不启用文字分析，直接用专用提示词 + 原图生成。</li><li>选择生图清晰度和生成参数。</li><li>点击 <code>生成辅助图</code>，每个 pass 会生成一张图并回写 Photoshop。</li></ol>
+      <p class="ok">合成辅助器的专用提示词会要求不改变构图、不改变主体结构、不添加文字或水印。</p>
+    </div>
+
+    <div id="effect" class="card">
+      <h2>六、特效迁移使用方案</h2>
+      <div class="grid">
+        <div class="step"><h3>方案一：先分析再迁移</h3><ol><li>读取原图/当前主体。</li><li>读取特效源图/参考图。</li><li>选择 <code>先分析特效图生成提示词，再迁移</code>。</li><li>文字模型只分析特效源图的颜色、材质、边缘、光影、粒子和镜头语言。</li><li>插件把分析提示词交给生图模型，在原图上迁移特效。</li></ol></div>
+        <div class="step"><h3>方案二：双图直接参考</h3><ol><li>读取原图和特效源图。</li><li>选择 <code>原图 + 特效图直接作为参考图迁移</code>。</li><li>生图模型会把原图作为主体/构图/身份来源，把特效图只作为效果、材质、光影风格参考。</li><li>点击 <code>开始特效迁移</code>。</li></ol></div>
+      </div>
+      <p class="ok">迁移强度可选轻微、平衡、强烈；结果保持正常图层混合模式。</p>
+    </div>
+
+    <div id="superres" class="card">
+      <h2>七、AI超清使用方案</h2>
+      <ol><li>进入 <code>应用 → AI超清</code>。</li><li>读取要超清的 Photoshop 选区。</li><li>选择 2x、3x 或 4x 放大倍数。</li><li>点击 <code>计算切片</code>，插件会按 Nano Banana 2 单张 4K 的能力自动拆分 tile。</li><li>点击 <code>开始 AI超清</code>，每个 tile 用专用超分提示词生成，再按目标位置回贴。</li></ol>
+      <p class="ok">AI超清提示词强调高清化、边缘补细节、tile 边缘连续，禁止换脸、改构图、增删物体。</p>
+    </div>
+
+    <div id="runninghub" class="card">
+      <h2>八、RunningHub 应用使用方案</h2>
+      <ol><li>在设置中填写 RunningHub API Key。</li><li>进入 <code>应用</code> 页面，打开 RunningHub 导入/管理区域。</li><li>粘贴 RunningHub 应用链接或 App ID，点击解析/导入。</li><li>导入后会在应用首页出现应用卡片。</li><li>打开应用卡片，图片字段会显示为读取 Photoshop 选区的控件，文本/数值字段按 RunningHub 参数填写。</li><li>点击 <code>运行应用</code>。插件会先上传图片输入，再提交任务并轮询结果。</li><li>返回图像会自动放回 Photoshop。</li></ol>
+      <p class="ok">本功能的接入与交互部分衍生自小T（PixelRunner / 小T修图助手，Copyright 2026 XIAOTsune），按 Apache License 2.0 授权并经本项目修改。署名见项目内的 <code>NOTICE</code>，许可证全文见 <code>LICENSE-Apache-2.0.txt</code>。</p>
+    </div>
+
+    <div id="faq" class="card">
+      <h2>九、常见问题</h2>
+      <div class="step"><h3>生成失败</h3><p>先检查 API Key、余额、模型是否可用。RunningHub 的余额不足、队列已满属于服务端状态，需要到对应平台处理。</p></div>
+      <div class="step"><h3>参考图不显示</h3><p>重新进入应用页或重新添加当前选区为参考图。2.1.1 已修复参考图数据格式兼容与 VFX 预览刷新。</p></div>
+      <div class="step"><h3>下拉框遮挡输入框</h3><p>2.1.1 已将应用里的下拉控件改为内联伪下拉框，展开时会占用布局空间，不再盖住下面的提示词输入框。</p></div>
+      <div class="step"><h3>比例或区域不对</h3><p>2.1.1 的小应用生成请求默认使用自然比例，不再强制 1:1。回贴位置仍按源选区或应用输入区域放回 Photoshop。</p></div>
+    </div>
+
+    <div class="card small">
+      <h2>版本信息</h2>
+      <p><strong>幻梦AI 修图插件 3.1.1 正式版</strong></p>
+      <p>作者：庄泽 / 零柒zero。插件交流群：<strong>1103212650</strong>。插件完全免费，如果你从任何渠道付费获取，请立即举报商家。</p>
+    </div>
+  </div>
+</body>
+</html>

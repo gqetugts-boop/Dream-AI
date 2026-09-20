@@ -1,0 +1,49 @@
+幻梦AI 修图插件
+Copyright 2026 庄泽 / 零柒zero
+
+本产品包含第三方作品。其署名与许可证条件如下。
+
+
+====================================================================
+PixelRunner / 小T修图助手（像素起子）
+====================================================================
+
+Copyright 2026 XIAOTsune
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+许可证全文见同目录下的 LICENSE-Apache-2.0.txt。
+
+【本项目的修改声明】
+按 Apache License 2.0 第 4(b) 条声明：本项目中 RunningHub 应用接入、
+工具箱交互等相关部分的代码衍生自上述作品，并已由本项目作者修改 ——
+包括删减、改写、重命名，以及与项目自身代码的整合。
+
+【许可证关系】
+来源作品：Apache License 2.0
+本项目整体：GNU GPL v3.0（见仓库根目录的 LICENSE）
+两者兼容，方向为 Apache-2.0 → GPL-3.0（单向兼容）。
+来源作品本身仍按其原许可证授权，其版权不属于本项目作者。
+
+
+====================================================================
+图像对齐算法
+====================================================================
+
+参考自 草鱼 的作品（GPL-3.0）。
+
+说明：该作品原本以 GNU GPL v3.0 授权，但其原仓库现已不可访问，
+因此无法在此给出准确的项目名与地址。GPL-3.0 与本项目整体所用的
+许可证相同，两者不存在兼容性问题。
+
+对应实现位于 src/app/index.js 的「智能对齐系统 / Smart Alignment System」。
